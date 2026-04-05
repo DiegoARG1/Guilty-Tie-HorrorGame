@@ -145,6 +145,8 @@ void initScene(Shader ourShader)
     pointLightPositions.push_back(glm::vec3(1.0f, 9.3f, -7.0f));
     pointLightPositions.push_back(glm::vec3(0.0f, 10.0f, -3.0f));
 
+    models.push_back(Model("Linterna", "models/Linterna/Flashlight.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 0.05f));
+
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
     ourShader.use();
@@ -177,9 +179,36 @@ void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 pro
 
 void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 {
-    // MAPA TOTALMENTE LIMPIO: Aquí meteremos a la Entidad más adelante.
     shader->setFloat("material.shininess", 10.0f);
     setMultipleLight(shader, pointLightPositions);
+
+    // :::: DIBUJAR LINTERNA EN LA MANO ::::
+    glm::mat4 modelLinterna = glm::mat4(1.0f);
+
+    // 1. Pegada a la cámara
+    modelLinterna = glm::translate(modelLinterna, camera.Position);
+
+    // 2. Rotación sincronizada
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(5.0f, 0.0f, 0.0f));
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // 3. POSICIÓN DE PRUEBA: Justo en el centro de tu pantalla para que no se escape
+    modelLinterna = glm::translate(modelLinterna, glm::vec3(0.20f, -0.2f, 0.5f));
+
+    // 4. Escala media (0.05f) para asegurarnos de verla
+    modelLinterna = glm::scale(modelLinterna, glm::vec3(0.07f));
+
+    if (!models.empty()) {
+        // TRUCO DE LUZ SUTIL: Apenas lo suficiente para que el metal se vea entre las sombras
+        shader->setVec3("dirLights[0].ambient", 0.1f, 0.1f, 0.15f);
+        shader->setVec3("dirLights[0].diffuse", 0.0f, 0.0f, 0.0f);
+
+        models[0].Draw(*shader, modelLinterna);
+
+        // APAGAMOS EL TRUCO: Devolvemos los valores exactos de la noche para el terreno
+        shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
+        shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+    }
 }
 
 void setSimpleLight(Shader *shader)
@@ -204,10 +233,9 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 
     // 1. LUZ DE LUNA (Regresamos al terror de tu foto original)
     shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->setVec3("dirLights[0].ambient", 0.01f, 0.01f, 0.02f);
-    shader->setVec3("dirLights[0].diffuse", 0.01f, 0.01f, 0.02f);
+    shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f); // Azul muy, muy oscuro
+    shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f); // Luz directa casi nula
     shader->setVec3("dirLights[0].specular", 0.0f, 0.0f, 0.0f);
-
     // :::: APAGADO ABSOLUTO DE LUCES EXTRAS (Evita la luz fantasma) ::::
     for (int i = 1; i < 4; i++) {
         string num = std::to_string(i);
@@ -237,17 +265,22 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
     // 2. TU LINTERNA (Control On/Off seguro)
     if (linternaEncendida)
     {
-        // El "aura" de tus pies ahora sí está apagada para más terror
-        shader->setVec3("pointLights[0].position", camera.Position);
-        shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
-        shader->setVec3("pointLights[0].diffuse", 0.0f, 0.0f, 0.0f);
-        shader->setVec3("pointLights[0].specular", 0.0f, 0.0f, 0.0f);
-        shader->setFloat("pointLights[0].constant", 1.0f);
-        shader->setFloat("pointLights[0].linear", 0.09f);
-        shader->setFloat("pointLights[0].quadratic", 0.032f);
+        // TRUCO: Un puntito de luz justo en la punta de la linterna para que parezca encendida
+        // Calculamos la punta (un poco más adelante que el origen del spotLight)
+        glm::vec3 puntaLinterna = camera.Position + (camera.Right * 0.45f) + (camera.Up * -0.35f) + (camera.Front * 0.2f);
 
-        // Tu linterna
-        shader->setVec3("spotLights[0].position", camera.Position);
+        shader->setVec3("pointLights[0].position", puntaLinterna);
+        shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[0].diffuse", 1.0f, 1.0f, 0.8f); // Tono cálido
+        shader->setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+
+        // Estos valores súper altos hacen que la luz "muera" rapidísimo (no iluminará el piso, solo la linterna)
+        shader->setFloat("pointLights[0].constant", 1.0f);
+        shader->setFloat("pointLights[0].linear", 2.0f);
+        shader->setFloat("pointLights[0].quadratic", 5.0f);
+
+        // Tu linterna (SpotLight) se queda igualita...
+        shader->setVec3("spotLights[0].position", camera.Position + (camera.Right * 0.45f) + (camera.Up * -0.35f));
         shader->setVec3("spotLights[0].direction", camera.Front);
         shader->setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
         shader->setVec3("spotLights[0].diffuse", 3.0f, 3.0f, 2.5f); // Tono cálido realista
