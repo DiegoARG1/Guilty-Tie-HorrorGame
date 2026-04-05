@@ -1,0 +1,285 @@
+﻿
+#include <GLFW/glfw3.h>
+#include <engine/Billboard.h>
+#include <engine/CollisionBox.h>
+#include <engine/Objectives.h>
+#include <engine/Particles.h>
+#include <engine/Plane.h>
+#include <engine/QuadTexture.h>
+#include <engine/RigidModel.h>
+#include <engine/Terrain.h>
+#include <engine/functions.h>
+#include <engine/shader_m.h>
+#include <engine/skybox.h>
+#include <engine/textrenderer.h>
+#include <engine/Audio.h>
+#include <glad/glad.h>
+#include <iostream>
+#include <thread>
+
+int main()
+{
+    //:::: INICIALIZAMOS GLFW CON LA VERSIÓN 3.3 :::://
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    // Cambiamos el nombre de la ventana a tu juego
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Guilty Tie", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetJoystickCallback(joystick_callback);
+
+    // Oculta el mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    Shader ourShader("shaders/multiple_lighting.vs", "shaders/multiple_lighting.fs");
+    initScene(ourShader);
+
+    // AQUÍ CARGAS TU MAPA DE ALTURAS DEL BOSQUE
+    Terrain terrain("textures//terrenus_guilty.png", texturePaths);
+    SkyBox sky(1.0f, "6");
+
+    while (!glfwWindowShouldClose(window))
+    {
+        float currentFrame = glfwGetTime();
+        deltaTime = (currentFrame - lastFrame);
+        lastFrame = currentFrame;
+
+        processInput(window);
+
+        // FONDO NEGRO PURO PARA EL TERROR
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ourShader.use();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+
+        drawModels(&ourShader, view, projection);
+        loadEnviroment(&terrain, &sky, view, projection);
+
+        // Físicas básicas (Gravedad y salto)
+        if (saltar) {
+            if (posicion_y < (maxima_altura + posicion_suelo)) posicion_y += 0.1f;
+            else saltar = false;
+        }
+        else {
+            if (posicion_y > posicion_suelo) posicion_y -= 0.1f;
+        }
+        // :::: 1. LÍMITES DEL MAPA (Muros invisibles para no caer al vacío) ::::
+        // El mapa mide 100x100 (de -50 a 50). Te encerramos en 49 para estar seguros.
+        if (camera.PosPersonaje.x > 49.0f) camera.PosPersonaje.x = 49.0f;
+        if (camera.PosPersonaje.x < -49.0f) camera.PosPersonaje.x = -49.0f;
+        if (camera.PosPersonaje.z > 49.0f) camera.PosPersonaje.z = 49.0f;
+        if (camera.PosPersonaje.z < -49.0f) camera.PosPersonaje.z = -49.0f;
+        // Cámara estricta de 1ra persona
+        camera.Position.x = camera.PosPersonaje.x;
+        camera.Position.z = camera.PosPersonaje.z;
+
+        // 1. Calculamos dónde DEBERÍA estar el suelo
+        float altura_matematica = terrain.Superficie(camera.Position.x, camera.Position.z);
+        float altura_objetivo = (altura_matematica * 300.0f); // Aplica tu escala aquí
+
+        // 2. LAS RODILLAS VIRTUALES (Lerp)
+        // En lugar de igualar la altura de golpe, nos acercamos un porcentaje en cada frame.
+        // Si subes el 10.0f, la cámara se ajusta más rápido (más duro). Si lo bajas, es más flotante.
+        float velocidad_suavizado = 5.0f * deltaTime;
+        camera.PosPersonaje.y = camera.PosPersonaje.y + (altura_objetivo - camera.PosPersonaje.y) * velocidad_suavizado;
+
+        // 3. Colocamos los ojos 1.8 metros por encima del cuerpo ya suavizado
+        camera.Position.y = camera.PosPersonaje.y + 1.8f;
+
+        collisions();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    delete[] texturePaths;
+    sky.Release();
+    terrain.Release();
+    glfwTerminate();
+
+    return 0;
+}
+
+void initScene(Shader ourShader)
+{
+    // 1. POSICIÓN INICIAL DEL JUGADOR
+    camera.Position = glm::vec3(23.0f, 1.8f, 29.0f);
+	camera.PosPersonaje = camera.Position;
+
+    // 2. TEXTURAS DEL SUELO (Cambia estas por tu tierra o lodo)
+    texturePaths = new const char* [4];
+    texturePaths[0] = "textures/multitexture_colors.jpg";
+    texturePaths[1] = "textures/TexturaP1.jpg";
+    texturePaths[2] = "textures/TexturaP2.png";
+    texturePaths[3] = "textures/TexturaP3.jpg";
+
+    // 3. LUCES DEL MAPA (Ahorita las dejamos así para que veas, luego las apagamos)
+    pointLightPositions.push_back(glm::vec3(20.3f, 5.2f, 20.0f));
+    pointLightPositions.push_back(glm::vec3(20.3f, 2.0f, 30.0f));
+    pointLightPositions.push_back(glm::vec3(1.0f, 9.3f, -7.0f));
+    pointLightPositions.push_back(glm::vec3(0.0f, 10.0f, -3.0f));
+
+    glEnable(GL_DEPTH_TEST);
+    camera.setCollBox();
+    ourShader.use();
+}
+
+void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection)
+{
+    // 1. PRIMERO aplicamos luces y configuraciones al terreno
+    terrain->getShader()->use();
+    setMultipleLight(terrain->getShader(), pointLightPositions);
+    terrain->getShader()->setFloat("shininess", 10.0f);
+
+    // 2. LUEGO lo dibujamos
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0, -2.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(100.5f, 300.0f, 100.5f));
+    terrain->draw(model, view, projection);
+
+    // 3. PRIMERO aplicamos luces al cielo
+    sky->getShader()->use();
+    setMultipleLight(sky->getShader(), pointLightPositions);
+    sky->getShader()->setFloat("shininess", 10.0f);
+
+    // 4. LUEGO lo dibujamos
+    glm::mat4 skyModel = glm::mat4(1.0f);
+    skyModel = glm::translate(skyModel, glm::vec3(0.0f, 0.0f, 0.0f));
+    skyModel = glm::scale(skyModel, glm::vec3(200.0f, 200.0f, 200.0f));
+    sky->draw(skyModel, view, projection, skyPos);
+}
+
+void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
+{
+    // MAPA TOTALMENTE LIMPIO: Aquí meteremos a la Entidad más adelante.
+    shader->setFloat("material.shininess", 10.0f);
+    setMultipleLight(shader, pointLightPositions);
+}
+
+void setSimpleLight(Shader *shader)
+{
+    shader->setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    shader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+    shader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+    shader->setInt("lightType", (int)lightType);
+    shader->setVec3("light.position", lightPos);
+    shader->setVec3("light.direction", lightDir);
+    shader->setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+    shader->setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+    shader->setVec3("viewPos", camera.Position);
+    shader->setFloat("light.constant", 0.2f);
+    shader->setFloat("light.linear", 0.02f);
+    shader->setFloat("light.quadratic", 0.032f);
+    shader->setFloat("material.shininess", 60.0f);
+}
+void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
+{
+    shader->setVec3("viewPos", camera.Position);
+
+    // 1. LUZ DE LUNA (Regresamos al terror de tu foto original)
+    shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+    shader->setVec3("dirLights[0].ambient", 0.01f, 0.01f, 0.02f);
+    shader->setVec3("dirLights[0].diffuse", 0.01f, 0.01f, 0.02f);
+    shader->setVec3("dirLights[0].specular", 0.0f, 0.0f, 0.0f);
+
+    // :::: APAGADO ABSOLUTO DE LUCES EXTRAS (Evita la luz fantasma) ::::
+    for (int i = 1; i < 4; i++) {
+        string num = std::to_string(i);
+
+        // Limpiar DirLights
+        shader->setVec3("dirLights[" + num + "].direction", glm::vec3(0.0f, -1.0f, 0.0f));
+        shader->setVec3("dirLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("dirLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("dirLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
+
+        // Limpiar PointLights
+        shader->setVec3("pointLights[" + num + "].position", glm::vec3(0.0f, -10.0f, 0.0f));
+        shader->setVec3("pointLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("pointLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
+        shader->setFloat("pointLights[" + num + "].constant", 1.0f);
+
+        // Limpiar SpotLights
+        shader->setVec3("spotLights[" + num + "].direction", glm::vec3(0.0f, -1.0f, 0.0f));
+        shader->setVec3("spotLights[" + num + "].position", glm::vec3(0.0f, -10.0f, 0.0f));
+        shader->setVec3("spotLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("spotLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("spotLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
+        shader->setFloat("spotLights[" + num + "].constant", 1.0f);
+    }
+
+    // 2. TU LINTERNA (Control On/Off seguro)
+    if (linternaEncendida)
+    {
+        // El "aura" de tus pies ahora sí está apagada para más terror
+        shader->setVec3("pointLights[0].position", camera.Position);
+        shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[0].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[0].specular", 0.0f, 0.0f, 0.0f);
+        shader->setFloat("pointLights[0].constant", 1.0f);
+        shader->setFloat("pointLights[0].linear", 0.09f);
+        shader->setFloat("pointLights[0].quadratic", 0.032f);
+
+        // Tu linterna
+        shader->setVec3("spotLights[0].position", camera.Position);
+        shader->setVec3("spotLights[0].direction", camera.Front);
+        shader->setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("spotLights[0].diffuse", 3.0f, 3.0f, 2.5f); // Tono cálido realista
+        shader->setVec3("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
+        shader->setFloat("spotLights[0].constant", 1.0f);
+        shader->setFloat("spotLights[0].linear", 0.02f);
+        shader->setFloat("spotLights[0].quadratic", 0.001f);
+        shader->setFloat("spotLights[0].cutOff", glm::cos(glm::radians(10.0f)));
+        shader->setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(15.0f)));
+    }
+    else
+    {
+        // TODO APAGADO (Aseguramos que nada brille en la oscuridad)
+        shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[0].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("pointLights[0].specular", 0.0f, 0.0f, 0.0f);
+        shader->setFloat("pointLights[0].constant", 1.0f);
+
+        shader->setVec3("spotLights[0].direction", glm::vec3(0.0f, -1.0f, 0.0f));
+        shader->setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("spotLights[0].diffuse", 0.0f, 0.0f, 0.0f);
+        shader->setVec3("spotLights[0].specular", 0.0f, 0.0f, 0.0f);
+        shader->setFloat("spotLights[0].constant", 1.0f);
+    }
+
+    shader->setInt("lightType", 1);
+    shader->setInt("maxRenderLights", 4);
+}
+
+void collisions()
+{
+    //Detecta las colisiones de las cajas individuales
+    //TODO LO DE LAS COLISIONES VA AQUÍ
+    detectColls(collboxes, &camera, renderCollBox, collidedObject_callback);
+}
