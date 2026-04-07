@@ -65,6 +65,7 @@ int main()
     {
         float currentFrame = glfwGetTime();
         deltaTime = (currentFrame - lastFrame);
+        std::cout << "Coordenada X: " << camera.Position.x << " | Coordenada Z: " << camera.Position.z << std::endl;
         lastFrame = currentFrame;
 
         processInput(window);
@@ -147,6 +148,9 @@ void initScene(Shader ourShader)
 
     models.push_back(Model("Linterna", "models/Linterna/Flashlight.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 0.05f));
 
+    models.push_back(Model("Cabana", "models/Cabana/Cabana.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Puerta", "models/Cabana/Puerta.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
     ourShader.use();
@@ -190,7 +194,7 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
     // 2. Rotación sincronizada
     modelLinterna = glm::rotate(modelLinterna, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(5.0f, 0.0f, 0.0f));
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
     modelLinterna = glm::rotate(modelLinterna, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     // 3. POSICIÓN DE PRUEBA: Justo en el centro de tu pantalla para que no se escape
     modelLinterna = glm::translate(modelLinterna, glm::vec3(0.20f, -0.2f, 0.5f));
@@ -208,6 +212,39 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         // APAGAMOS EL TRUCO: Devolvemos los valores exactos de la noche para el terreno
         shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
         shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+    }
+
+    // :::: ATERRIZAJE DE LA ESTRUCTURA ::::
+    // Tu jugador aparece en X: 23, Z: 29. 
+    // Ponemos la cabaña en X: 23, Z: 20 (Justo enfrente de ti).
+    // Y la subimos a Y: 10.0f para sacarla de la tierra.
+    glm::vec3 posicionEstructura = glm::vec3(-12.0f, 15.0f, -5.0f);
+
+    float gradosRotacion = 180.0f;
+
+    // DIBUJAR LA CABAÑA
+    glm::mat4 modelCabana = glm::mat4(1.0f);
+    modelCabana = glm::translate(modelCabana, posicionEstructura);
+
+    modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // Subimos la escala a 3.0f por si 1.0f era muy pequeña
+    modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
+
+    if (models.size() > 1) {
+        models[1].Draw(*shader, modelCabana);
+    }
+
+    // :::: DIBUJAR LA PUERTA (models[2]) ::::
+    glm::mat4 modelPuerta = glm::mat4(1.0f);
+    modelPuerta = glm::translate(modelPuerta, posicionEstructura);
+
+    modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f)); // Misma escala de 3.0f
+
+    if (models.size() > 2) {
+        models[2].Draw(*shader, modelPuerta);
     }
 }
 
