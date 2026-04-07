@@ -248,22 +248,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     }
 }
 
-void setSimpleLight(Shader *shader)
-{
-    shader->setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-    shader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-    shader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-    shader->setInt("lightType", (int)lightType);
-    shader->setVec3("light.position", lightPos);
-    shader->setVec3("light.direction", lightDir);
-    shader->setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
-    shader->setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
-    shader->setVec3("viewPos", camera.Position);
-    shader->setFloat("light.constant", 0.2f);
-    shader->setFloat("light.linear", 0.02f);
-    shader->setFloat("light.quadratic", 0.032f);
-    shader->setFloat("material.shininess", 60.0f);
-}
 void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 {
     shader->setVec3("viewPos", camera.Position);
