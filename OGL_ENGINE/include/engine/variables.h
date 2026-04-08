@@ -57,6 +57,19 @@ Terrain terrain2;
 const char** texturePaths;
 glm::vec3 skyPos(0);
 
+// NUESTRA LISTA PARA EL BOSQUE TÉTRICO
+std::vector<glm::vec3> posicionesBosque = {
+    glm::vec3(15.0f, 13.0f, 32.0f),
+    glm::vec3(14.0f, 13.0f, 0.0f),
+    glm::vec3(30.0f, 13.0f, 0.0f),
+    glm::vec3(0.0f, 13.0f, 0.0f),
+    glm::vec3(-20.0f, 13.0f, -15.0f),
+    glm::vec3(-20.0f, 13.0f, 28.0f),
+    glm::vec3(-10.0f, 13.0f, 20.0f),
+    glm::vec3(0.0f, 13.0f, 26.0f),
+    // ¡Puedes seguir agregando coordenadas aquí separadas por comas para hacer un bosque masivo!
+};
+
 //:::: INTERACCIÓN Y OBJETOS (CABAÑA) :::://
 bool abrirPuerta = false;
 float anguloPuerta = 0.0f;

@@ -58,14 +58,13 @@ int main()
     initScene(ourShader);
 
     // AQUÍ CARGAS TU MAPA DE ALTURAS DEL BOSQUE
-    Terrain terrain("textures//terrenus_guilty.png", texturePaths);
+    Terrain terrain("textures//terrenus_guilty2.png", texturePaths);
     SkyBox sky(1.0f, "6");
 
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
         deltaTime = (currentFrame - lastFrame);
-        std::cout << "Coordenada X: " << camera.Position.x << " | Coordenada Z: " << camera.Position.z << std::endl;
         lastFrame = currentFrame;
 
         processInput(window);
@@ -150,6 +149,9 @@ void initScene(Shader ourShader)
 
     models.push_back(Model("Cabana", "models/Cabana/Cabana.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Puerta", "models/Cabana/Puerta.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Pino1", "models/Pinos/Pino1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Pino2", "models/Pinos/Pino2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Pino3", "models/Pinos/Pino3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -212,6 +214,30 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         // APAGAMOS EL TRUCO: Devolvemos los valores exactos de la noche para el terreno
         shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
         shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+    }
+    // :::: GENERADOR DEL BOSQUE TÉTRICO ::::
+    for (int i = 0; i < posicionesBosque.size(); i++)
+    {
+        glm::mat4 modelPino = glm::mat4(1.0f);
+        modelPino = glm::translate(modelPino, posicionesBosque[i]);
+
+        // TRUCO 1: Variedad de modelos. 
+        // Usamos la operación módulo (%) para alternar entre el índice 3, 4 y 5.
+        // Así el árbol 0 será Pino1, el árbol 1 será Pino2, el árbol 2 será Pino3, y se repite.
+        int tipoPino = 3 + (i % 3);
+
+        // TRUCO 2: Escala pseudo-aleatoria. 
+        // Hace que algunos pinos sean gigantes y otros pequeños para que no se vean clonados.
+        float escalaPino = 2.0f + ((i % 5) * 0.4f);
+        modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
+
+        // TRUCO 3: Rotación pseudo-aleatoria.
+        // Gira cada pino un ángulo distinto para que sus ramas apunten a lugares diferentes.
+        modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        if (models.size() > tipoPino) {
+            models[tipoPino].Draw(*shader, modelPino);
+        }
     }
 
     // :::: ATERRIZAJE DE LA ESTRUCTURA ::::
