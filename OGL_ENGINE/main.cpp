@@ -215,10 +215,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     }
 
     // :::: ATERRIZAJE DE LA ESTRUCTURA ::::
-    // Tu jugador aparece en X: 23, Z: 29. 
-    // Ponemos la cabaña en X: 23, Z: 20 (Justo enfrente de ti).
-    // Y la subimos a Y: 10.0f para sacarla de la tierra.
-    glm::vec3 posicionEstructura = glm::vec3(-12.0f, 15.0f, -5.0f);
 
     float gradosRotacion = 180.0f;
 
@@ -235,13 +231,19 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         models[1].Draw(*shader, modelCabana);
     }
 
+    // :::: ANIMACIÓN DE LA PUERTA ::::
+    if (abrirPuerta && anguloPuerta < 90.0f) {
+        anguloPuerta += 45.0f * deltaTime; // 45.0f es la velocidad a la que se abre
+    }
+
     // :::: DIBUJAR LA PUERTA (models[2]) ::::
     glm::mat4 modelPuerta = glm::mat4(1.0f);
     modelPuerta = glm::translate(modelPuerta, posicionEstructura);
 
-    modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
+    // ATENCIÓN AQUÍ: Sumamos los grados base (gradosRotacion) + la animación (anguloPuerta)
+    modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f)); // Misma escala de 3.0f
+    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f)); // Recuerda usar la misma escala que le pusiste a la cabaña
 
     if (models.size() > 2) {
         models[2].Draw(*shader, modelPuerta);

@@ -60,6 +60,7 @@ glm::vec3 skyPos(0);
 //:::: INTERACCIÓN Y OBJETOS (CABAÑA) :::://
 bool abrirPuerta = false;
 float anguloPuerta = 0.0f;
+glm::vec3 posicionEstructura = glm::vec3(-10.0f, 17.4f, 15.0f);
 
 //:::: AUDIO :::://
 Audio efecto1;

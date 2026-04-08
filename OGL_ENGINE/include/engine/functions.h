@@ -41,7 +41,13 @@ void processInput(GLFWwindow* window)
 
     // Interacción: Abrir Puerta (Tecla E)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        abrirPuerta = true;
+    {
+        float distanciaCabana = glm::distance(camera.Position, posicionEstructura);
+
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && distanciaCabana < 5.0f) {
+            abrirPuerta = true;
+        }
+    }
 
     // Linterna (Tecla F) con seguro antispam
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
