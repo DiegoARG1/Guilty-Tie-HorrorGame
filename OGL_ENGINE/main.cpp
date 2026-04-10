@@ -152,6 +152,8 @@ void initScene(Shader ourShader)
     models.push_back(Model("Pino1", "models/Pinos/Pino1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Pino2", "models/Pinos/Pino2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Pino3", "models/Pinos/Pino3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Auto", "models/Carro/Carro.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+	models.push_back(Model("Cajuela", "models/Carro/Cajuela.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -273,6 +275,45 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
     if (models.size() > 2) {
         models[2].Draw(*shader, modelPuerta);
+    }
+
+    // :::: ESCENA INICIAL (EL AUTO) ::::
+    // Lo bajamos a 1.8f y lo ponemos en Z:23 para que lo veas apenas inicie el juego
+    glm::vec3 posicionAuto = glm::vec3(23.0f, 1.8f, 23.0f);
+
+    // 1. Dibujar el Auto
+    glm::mat4 modelAuto = glm::mat4(1.0f);
+    modelAuto = glm::translate(modelAuto, posicionAuto);
+    modelAuto = glm::rotate(modelAuto, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelAuto = glm::scale(modelAuto, glm::vec3(2.0f));
+
+    // Solo dibujamos una vez el modelo 6
+    if (models.size() > 6) {
+        models[6].Draw(*shader, modelAuto);
+    }
+
+    // 2. MATEMÁTICAS DE LA ANIMACIÓN DE LA CAJUELA
+    if (abrirCajuela && anguloCajuela < 60.0f) {
+        anguloCajuela += 45.0f * deltaTime;
+    }
+    else if (!abrirCajuela && anguloCajuela > 0.0f) {
+        anguloCajuela -= 45.0f * deltaTime;
+    }
+
+    if (anguloCajuela > 60.0f) anguloCajuela = 60.0f;
+    if (anguloCajuela < 0.0f) anguloCajuela = 0.0f;
+
+    // 3. DIBUJAR LA CAJUELA
+    glm::mat4 modelCajuela = glm::mat4(1.0f);
+    modelCajuela = glm::translate(modelCajuela, posicionAuto);
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(anguloCajuela), glm::vec3(1.0f, 0.0f, 0.0f));
+    modelCajuela = glm::scale(modelCajuela, glm::vec3(2.0f));
+
+    // CORRECCIÓN: La cajuela es el modelo 7 (no el 9)
+    if (models.size() > 7) {
+        models[7].Draw(*shader, modelCajuela);
     }
 }
 

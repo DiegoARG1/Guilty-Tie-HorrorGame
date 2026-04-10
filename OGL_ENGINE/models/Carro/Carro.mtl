@@ -1,0 +1,83 @@
+# Blender 5.1.0 MTL File: 'Carro.blend'
+# www.blender.org
+
+newmtl Carbadges_misc_U
+Ns 310.219971
+Ka 0.619143 0.619143 0.619143
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 3
+map_Kd Carbadges_misc_U_baseColor.png
+map_d Carbadges_misc_U_baseColor.png
+map_Bump -bm 1.000000 Carbadges_misc_U_normal.png
+
+newmtl Numberplates_Misk_U
+Ns 797.397766
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 2
+map_Kd Numberplates_Misk_U_baseColor.png
+map_d Numberplates_Misk_U_baseColor.png
+
+newmtl RB1c_Tire_1k
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd RB1c_Tire_1k_baseColor.jpeg
+
+newmtl UCB_BOTTOM_GT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd UCB_BOTTOM_GT_baseColor.png
+
+newmtl UCB_Interior_Trim
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd UCB_BOTTOM_GT_baseColor.png
+
+newmtl UCB_Lights_and_Glass
+Ns 894.247498
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd UCB_Lights_and_Glass_Transperent_baseColor.jpeg
+
+newmtl UCB_Lights_and_Glass_Transperent
+Ns 860.121826
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd UCB_Lights_and_Glass_Transperent_baseColor.jpeg
+
+newmtl kiri86_Bodymat
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.366253 0.005182 0.016807
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2

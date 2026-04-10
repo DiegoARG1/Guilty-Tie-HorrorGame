@@ -70,10 +70,15 @@ std::vector<glm::vec3> posicionesBosque = {
     // ¡Puedes seguir agregando coordenadas aquí separadas por comas para hacer un bosque masivo!
 };
 
-//:::: INTERACCIÓN Y OBJETOS (CABAÑA) :::://
+//:::: INTERACCIÓN Y OBJETOS :::://
+//cabana
 bool abrirPuerta = false;
 float anguloPuerta = 0.0f;
 glm::vec3 posicionEstructura = glm::vec3(-10.0f, 17.4f, 15.0f);
+
+//auto
+bool abrirCajuela = false;
+float anguloCajuela = 0.0f;
 
 //:::: AUDIO :::://
 Audio efecto1;
