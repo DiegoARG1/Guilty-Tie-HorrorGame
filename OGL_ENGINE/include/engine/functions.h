@@ -39,14 +39,31 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
+    float distanciaCabana = glm::distance(camera.Position, posicionEstructura);
+    float distanciaCajuela = glm::distance(camera.Position, posicionAuto);
+
     // Interacción: Abrir Puerta (Tecla E)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
-        float distanciaCabana = glm::distance(camera.Position, posicionEstructura);
-
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && distanciaCabana < 5.0f) {
-            abrirPuerta = true;
+        if (!teclaEPulsada)
+        {
+            // 1. ¿Estamos cerca de la cabaña? (Abrimos puerta)
+            if (distanciaCabana < 5.0f)
+            {
+                abrirPuerta = !abrirPuerta;
+                teclaEPulsada = true;
+            }
+            // 2. ¿Estamos cerca del auto? (Abrimos cajuela)
+            else if (distanciaCajuela < 5.0f)
+            {
+                abrirCajuela = !abrirCajuela;
+                teclaEPulsada = true;
+            }
         }
+    }
+    else
+    {
+        teclaEPulsada = false; // Quitamos el seguro al soltar
     }
 
     // Linterna (Tecla F) con seguro antispam

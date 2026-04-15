@@ -71,6 +71,8 @@ std::vector<glm::vec3> posicionesBosque = {
 };
 
 //:::: INTERACCIÓN Y OBJETOS :::://
+// 
+bool teclaEPulsada = false;
 //cabana
 bool abrirPuerta = false;
 float anguloPuerta = 0.0f;
@@ -79,6 +81,7 @@ glm::vec3 posicionEstructura = glm::vec3(-10.0f, 17.4f, 15.0f);
 //auto
 bool abrirCajuela = false;
 float anguloCajuela = 0.0f;
+glm::vec3 posicionAuto = glm::vec3(20.0f, 17.8f, 38.0f);
 
 //:::: AUDIO :::://
 Audio efecto1;

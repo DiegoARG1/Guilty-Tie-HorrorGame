@@ -279,13 +279,13 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
     // :::: ESCENA INICIAL (EL AUTO) ::::
     // Lo bajamos a 1.8f y lo ponemos en Z:23 para que lo veas apenas inicie el juego
-    glm::vec3 posicionAuto = glm::vec3(23.0f, 1.8f, 23.0f);
 
+    float orientacionAuto = 280.0f;
     // 1. Dibujar el Auto
     glm::mat4 modelAuto = glm::mat4(1.0f);
     modelAuto = glm::translate(modelAuto, posicionAuto);
-    modelAuto = glm::rotate(modelAuto, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelAuto = glm::scale(modelAuto, glm::vec3(2.0f));
+    modelAuto = glm::rotate(modelAuto, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelAuto = glm::scale(modelAuto, glm::vec3(3.1f));
 
     // Solo dibujamos una vez el modelo 6
     if (models.size() > 6) {
@@ -306,10 +306,10 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     // 3. DIBUJAR LA CAJUELA
     glm::mat4 modelCajuela = glm::mat4(1.0f);
     modelCajuela = glm::translate(modelCajuela, posicionAuto);
-    modelCajuela = glm::rotate(modelCajuela, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    modelCajuela = glm::rotate(modelCajuela, glm::radians(anguloCajuela), glm::vec3(1.0f, 0.0f, 0.0f));
-    modelCajuela = glm::scale(modelCajuela, glm::vec3(2.0f));
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(-anguloCajuela), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
 
     // CORRECCIÓN: La cajuela es el modelo 7 (no el 9)
     if (models.size() > 7) {
