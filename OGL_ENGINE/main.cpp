@@ -69,6 +69,8 @@ int main()
 
         processInput(window);
 
+        std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
+
         // FONDO NEGRO PURO PARA EL TERROR
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -134,10 +136,10 @@ void initScene(Shader ourShader)
 
     // 2. TEXTURAS DEL SUELO (Cambia estas por tu tierra o lodo)
     texturePaths = new const char* [4];
-    texturePaths[0] = "textures/multitexture_colors.jpg";
-    texturePaths[1] = "textures/TexturaP1.jpg";
-    texturePaths[2] = "textures/TexturaP2.png";
-    texturePaths[3] = "textures/TexturaP3.jpg";
+    texturePaths[0] = "textures/multitexturaGT.jpg";
+    texturePaths[1] = "textures/Lodo2.jpg";
+    texturePaths[2] = "textures/Bosque.jpg";
+    texturePaths[3] = "textures/Grava.jpg";
 
     // 3. LUCES DEL MAPA (Ahorita las dejamos así para que veas, luego las apagamos)
     pointLightPositions.push_back(glm::vec3(20.3f, 5.2f, 20.0f));
@@ -154,6 +156,8 @@ void initScene(Shader ourShader)
     models.push_back(Model("Pino3", "models/Pinos/Pino3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Auto", "models/Carro/Carro.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 	models.push_back(Model("Cajuela", "models/Carro/Cajuela.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Toca_Base", "models/TocaDiscos/Toca_Base.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Toca_Disco", "models/TocaDiscos/Toca_Disco.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -315,6 +319,30 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     if (models.size() > 7) {
         models[7].Draw(*shader, modelCajuela);
     }
+
+    // :::: LÓGICA DEL DISCO ::::
+    if (tocadiscosEncendido) {
+        if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; // Acelera
+    }
+    else {
+        if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; // Desacelera por fricción
+        if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
+    }
+    anguloDisco += velocidadDisco * deltaTime;
+
+    // 1. Dibujar Base
+    glm::mat4 modelBase = glm::mat4(1.0f);
+    modelBase = glm::translate(modelBase, posicionTocadiscos);
+    modelBase = glm::scale(modelBase, glm::vec3(0.5f));
+    if (models.size() > 8) models[8].Draw(*shader, modelBase);
+
+    // 2. Dibujar Disco
+    glm::mat4 modelDisco = glm::mat4(1.0f);
+    modelDisco = glm::translate(modelDisco, posicionTocadiscos);
+    // Rotamos sobre el eje Y (vertical)
+    modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
+    if (models.size() > 9) models[9].Draw(*shader, modelDisco);
 }
 
 void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)

@@ -83,6 +83,12 @@ bool abrirCajuela = false;
 float anguloCajuela = 0.0f;
 glm::vec3 posicionAuto = glm::vec3(20.0f, 17.8f, 38.0f);
 
+// :::: TOCADISCOS ::::
+bool tocadiscosEncendido = false;
+float anguloDisco = 0.0f;
+float velocidadDisco = 0.0f; // Para que acelere poco a poco
+glm::vec3 posicionTocadiscos = glm::vec3(31.0f, 12.0f, -18.0f); // Ajusta según tu terreno
+
 //:::: AUDIO :::://
 Audio efecto1;
 Audio efecto2;

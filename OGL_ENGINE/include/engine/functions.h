@@ -30,6 +30,11 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 
     // Movimiento WASD
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        camera.MovementSpeed = 15.0f; // Velocidad de carrera
+    else
+        camera.MovementSpeed = 3.0f;  // Velocidad normal de caminata
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -41,6 +46,7 @@ void processInput(GLFWwindow* window)
 
     float distanciaCabana = glm::distance(camera.Position, posicionEstructura);
     float distanciaCajuela = glm::distance(camera.Position, posicionAuto);
+    float distToca = glm::distance(camera.Position, posicionTocadiscos);
 
     // Interacción: Abrir Puerta (Tecla E)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
@@ -57,6 +63,11 @@ void processInput(GLFWwindow* window)
             else if (distanciaCajuela < 5.0f)
             {
                 abrirCajuela = !abrirCajuela;
+                teclaEPulsada = true;
+            }
+            else if (distToca < 5.0f)
+            {
+                tocadiscosEncendido = !tocadiscosEncendido;
                 teclaEPulsada = true;
             }
         }
