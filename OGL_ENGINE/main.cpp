@@ -158,6 +158,11 @@ void initScene(Shader ourShader)
 	models.push_back(Model("Cajuela", "models/Carro/Cajuela.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Toca_Base", "models/TocaDiscos/Toca_Base.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
     models.push_back(Model("Toca_Disco", "models/TocaDiscos/Toca_Disco.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Cartel", "models/Cartel/Missing_Poster.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Bateria", "models/Bateria/Bateria.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -343,6 +348,49 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
     modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
     if (models.size() > 9) models[9].Draw(*shader, modelDisco);
+
+    // :::: MUEBLES DE LA CABAÑA ::::
+
+    // 12. MESA
+    glm::mat4 modelMesa = glm::mat4(1.0f);
+    modelMesa = glm::translate(modelMesa, posicionMesa);
+    modelMesa = glm::scale(modelMesa, glm::vec3(0.5f)); // Ajusta si es muy grande/pequeña
+    if (models.size() > 12) models[12].Draw(*shader, modelMesa);
+
+    // 13. BANCA
+    glm::mat4 modelBanca = glm::mat4(1.0f);
+    modelBanca = glm::translate(modelBanca, posicionBanca);
+    // Giramos la banca para que quede paralela a la mesa
+    modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
+    if (models.size() > 13) models[13].Draw(*shader, modelBanca);
+
+    // 14. SACO DE DORMIR
+    glm::mat4 modelSaco = glm::mat4(1.0f);
+    modelSaco = glm::translate(modelSaco, posicionSaco);
+    // Lo rotamos un poco para que se vea tirado al azar, no perfecto
+    modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
+    if (models.size() > 14) models[14].Draw(*shader, modelSaco);
+
+    // :::: OBJETOS DENTRO DE LA CAJUELA ::::
+
+    // 10. CARTEL "MISSING"
+    glm::mat4 modelCartel = glm::mat4(1.0f);
+    modelCartel = glm::translate(modelCartel, posicionCartel);
+    modelCartel = glm::rotate(modelCartel, glm::radians(280.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
+
+    if (models.size() > 10) models[10].Draw(*shader, modelCartel);
+
+    // 11. BATERÍA
+    glm::mat4 modelBateria = glm::mat4(1.0f);
+    modelBateria = glm::translate(modelBateria, posicionBateria);
+    modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
+
+    if (models.size() > 11) models[11].Draw(*shader, modelBateria);
 }
 
 void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)

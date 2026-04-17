@@ -89,6 +89,13 @@ float anguloDisco = 0.0f;
 float velocidadDisco = 0.0f; // Para que acelere poco a poco
 glm::vec3 posicionTocadiscos = glm::vec3(31.0f, 12.0f, -18.0f); // Ajusta según tu terreno
 
+//:::: OBJETOS :::://
+glm::vec3 posicionMesa = glm::vec3(-27.0f, 15.3f, 10.0f);
+glm::vec3 posicionBanca = glm::vec3(23.0f, 16.0f, 28.0f);
+glm::vec3 posicionSaco = glm::vec3(-28.0f, 16.0f, 15.0f);
+glm::vec3 posicionBateria = glm::vec3(20.5f, 17.658f, 37.2f);
+glm::vec3 posicionCartel = glm::vec3(19.5f, 17.700f, 37.2f);
+
 //:::: AUDIO :::://
 Audio efecto1;
 Audio efecto2;
