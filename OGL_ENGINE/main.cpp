@@ -29,7 +29,6 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // Cambiamos el nombre de la ventana a tu juego
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Guilty Tie", NULL, NULL);
     if (window == NULL)
     {
@@ -45,7 +44,6 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetJoystickCallback(joystick_callback);
 
-    // Oculta el mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -57,7 +55,6 @@ int main()
     Shader ourShader("shaders/multiple_lighting.vs", "shaders/multiple_lighting.fs");
     initScene(ourShader);
 
-    // AQUÍ CARGAS TU MAPA DE ALTURAS DEL BOSQUE
     Terrain terrain("textures//terrenus_guilty2.png", texturePaths);
     SkyBox sky(1.0f, "6");
 
@@ -69,9 +66,9 @@ int main()
 
         processInput(window);
 
-        std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
+        //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
-        // FONDO NEGRO PURO PARA EL TERROR
+        // FONDO NEGRO
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -84,7 +81,7 @@ int main()
         drawModels(&ourShader, view, projection);
         loadEnviroment(&terrain, &sky, view, projection);
 
-        // Físicas básicas (Gravedad y salto)
+        // Fisicas basicas (Gravedad y salto)
         if (saltar) {
             if (posicion_y < (maxima_altura + posicion_suelo)) posicion_y += 0.1f;
             else saltar = false;
@@ -92,27 +89,25 @@ int main()
         else {
             if (posicion_y > posicion_suelo) posicion_y -= 0.1f;
         }
-        // :::: 1. LÍMITES DEL MAPA (Muros invisibles para no caer al vacío) ::::
-        // El mapa mide 100x100 (de -50 a 50). Te encerramos en 49 para estar seguros.
+        // ::::LIMITES DEL MAPA::::
         if (camera.PosPersonaje.x > 49.0f) camera.PosPersonaje.x = 49.0f;
         if (camera.PosPersonaje.x < -49.0f) camera.PosPersonaje.x = -49.0f;
         if (camera.PosPersonaje.z > 49.0f) camera.PosPersonaje.z = 49.0f;
         if (camera.PosPersonaje.z < -49.0f) camera.PosPersonaje.z = -49.0f;
-        // Cámara estricta de 1ra persona
+        // Camara estricta de 1ra persona
         camera.Position.x = camera.PosPersonaje.x;
         camera.Position.z = camera.PosPersonaje.z;
 
-        // 1. Calculamos dónde DEBERÍA estar el suelo
+        //Calculamos donde esta el suelo
         float altura_matematica = terrain.Superficie(camera.Position.x, camera.Position.z);
-        float altura_objetivo = (altura_matematica * 300.0f); // Aplica tu escala aquí
+        float altura_objetivo = (altura_matematica * 300.0f);
 
-        // 2. LAS RODILLAS VIRTUALES (Lerp)
-        // En lugar de igualar la altura de golpe, nos acercamos un porcentaje en cada frame.
-        // Si subes el 10.0f, la cámara se ajusta más rápido (más duro). Si lo bajas, es más flotante.
+        // Ajuste lento
+        // En lugar de igualar la altura de golpe, nos acercamos un porcentaje en cada frame
         float velocidad_suavizado = 5.0f * deltaTime;
         camera.PosPersonaje.y = camera.PosPersonaje.y + (altura_objetivo - camera.PosPersonaje.y) * velocidad_suavizado;
 
-        // 3. Colocamos los ojos 1.8 metros por encima del cuerpo ya suavizado
+        //Colocamos los ojos 1.8m
         camera.Position.y = camera.PosPersonaje.y + 1.8f;
 
         collisions();
@@ -130,39 +125,38 @@ int main()
 
 void initScene(Shader ourShader)
 {
-    // 1. POSICIÓN INICIAL DEL JUGADOR
+    //POSICION INICIAL DEL JUGADOR
     camera.Position = glm::vec3(23.0f, 1.8f, 29.0f);
 	camera.PosPersonaje = camera.Position;
 
-    // 2. TEXTURAS DEL SUELO (Cambia estas por tu tierra o lodo)
+    //TEXTURAS DEL SUELO
     texturePaths = new const char* [4];
     texturePaths[0] = "textures/multitexturaGT.jpg";
     texturePaths[1] = "textures/Lodo2.jpg";
     texturePaths[2] = "textures/Bosque.jpg";
     texturePaths[3] = "textures/Grava.jpg";
 
-    // 3. LUCES DEL MAPA (Ahorita las dejamos así para que veas, luego las apagamos)
+    //LUCES DEL MAPA
     pointLightPositions.push_back(glm::vec3(20.3f, 5.2f, 20.0f));
     pointLightPositions.push_back(glm::vec3(20.3f, 2.0f, 30.0f));
     pointLightPositions.push_back(glm::vec3(1.0f, 9.3f, -7.0f));
     pointLightPositions.push_back(glm::vec3(0.0f, 10.0f, -3.0f));
 
-    models.push_back(Model("Linterna", "models/Linterna/Flashlight.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 0.05f));
-
-    models.push_back(Model("Cabana", "models/Cabana/Cabana.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Puerta", "models/Cabana/Puerta.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Pino1", "models/Pinos/Pino1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Pino2", "models/Pinos/Pino2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Pino3", "models/Pinos/Pino3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Auto", "models/Carro/Carro.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-	models.push_back(Model("Cajuela", "models/Carro/Cajuela.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Toca_Base", "models/TocaDiscos/Toca_Base.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Toca_Disco", "models/TocaDiscos/Toca_Disco.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Cartel", "models/Cartel/Missing_Poster.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Bateria", "models/Bateria/Bateria.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Linterna", "models/Linterna/Flashlight.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 0.05f));//1
+    models.push_back(Model("Cabana", "models/Cabana/Cabana.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//2
+    models.push_back(Model("Puerta", "models/Cabana/Puerta.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//3
+    models.push_back(Model("Pino1", "models/Pinos/Pino1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//4
+    models.push_back(Model("Pino2", "models/Pinos/Pino2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//5
+    models.push_back(Model("Pino3", "models/Pinos/Pino3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//6
+    models.push_back(Model("Auto", "models/Carro/Carro.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//7
+	models.push_back(Model("Cajuela", "models/Carro/Cajuela.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//8
+    models.push_back(Model("Toca_Base", "models/TocaDiscos/Toca_Base.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//9
+    models.push_back(Model("Toca_Disco", "models/TocaDiscos/Toca_Disco.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//10
+    models.push_back(Model("Cartel", "models/Cartel/Missing_Poster.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//11
+    models.push_back(Model("Bateria", "models/Bateria/Bateria.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//12
+    models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//13
+    models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//14
+    models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//15
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -171,23 +165,23 @@ void initScene(Shader ourShader)
 
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection)
 {
-    // 1. PRIMERO aplicamos luces y configuraciones al terreno
+    //luces y configuraciones de terreno
     terrain->getShader()->use();
     setMultipleLight(terrain->getShader(), pointLightPositions);
     terrain->getShader()->setFloat("shininess", 10.0f);
 
-    // 2. LUEGO lo dibujamos
+    //dibujar terreno
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0, -2.5f, 0.0f));
     model = glm::scale(model, glm::vec3(100.5f, 300.0f, 100.5f));
     terrain->draw(model, view, projection);
 
-    // 3. PRIMERO aplicamos luces al cielo
+    //luces cielo
     sky->getShader()->use();
     setMultipleLight(sky->getShader(), pointLightPositions);
     sky->getShader()->setFloat("shininess", 10.0f);
 
-    // 4. LUEGO lo dibujamos
+    //dibujar cielo
     glm::mat4 skyModel = glm::mat4(1.0f);
     skyModel = glm::translate(skyModel, glm::vec3(0.0f, 0.0f, 0.0f));
     skyModel = glm::scale(skyModel, glm::vec3(200.0f, 200.0f, 200.0f));
@@ -202,48 +196,36 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     // :::: DIBUJAR LINTERNA EN LA MANO ::::
     glm::mat4 modelLinterna = glm::mat4(1.0f);
 
-    // 1. Pegada a la cámara
     modelLinterna = glm::translate(modelLinterna, camera.Position);
-
-    // 2. Rotación sincronizada
     modelLinterna = glm::rotate(modelLinterna, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
     modelLinterna = glm::rotate(modelLinterna, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // 3. POSICIÓN DE PRUEBA: Justo en el centro de tu pantalla para que no se escape
     modelLinterna = glm::translate(modelLinterna, glm::vec3(0.20f, -0.2f, 0.5f));
-
-    // 4. Escala media (0.05f) para asegurarnos de verla
     modelLinterna = glm::scale(modelLinterna, glm::vec3(0.07f));
 
     if (!models.empty()) {
-        // TRUCO DE LUZ SUTIL: Apenas lo suficiente para que el metal se vea entre las sombras
         shader->setVec3("dirLights[0].ambient", 0.1f, 0.1f, 0.15f);
         shader->setVec3("dirLights[0].diffuse", 0.0f, 0.0f, 0.0f);
-
         models[0].Draw(*shader, modelLinterna);
-
-        // APAGAMOS EL TRUCO: Devolvemos los valores exactos de la noche para el terreno
         shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
         shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
     }
-    // :::: GENERADOR DEL BOSQUE TÉTRICO ::::
+    // :::: GENERADOR DEL BOSQUE ::::
     for (int i = 0; i < posicionesBosque.size(); i++)
     {
         glm::mat4 modelPino = glm::mat4(1.0f);
         modelPino = glm::translate(modelPino, posicionesBosque[i]);
 
-        // TRUCO 1: Variedad de modelos. 
-        // Usamos la operación módulo (%) para alternar entre el índice 3, 4 y 5.
-        // Así el árbol 0 será Pino1, el árbol 1 será Pino2, el árbol 2 será Pino3, y se repite.
+        //Variedad de modelos
         int tipoPino = 3 + (i % 3);
 
-        // TRUCO 2: Escala pseudo-aleatoria. 
-        // Hace que algunos pinos sean gigantes y otros pequeños para que no se vean clonados.
+        //Escala pseudo-aleatoria
+        // Hace que algunos pinos sean gigantes y otros pequeños para que no se vean clonados
         float escalaPino = 2.0f + ((i % 5) * 0.4f);
         modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
 
-        // TRUCO 3: Rotación pseudo-aleatoria.
-        // Gira cada pino un ángulo distinto para que sus ramas apunten a lugares diferentes.
+        //Rotacion pseudo-aleatoria.
+        //Gira cada pino un angulo distinto para que sus ramas apunten a lugares diferentes
         modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         if (models.size() > tipoPino) {
@@ -255,53 +237,45 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
     float gradosRotacion = 180.0f;
 
-    // DIBUJAR LA CABAÑA
+    //CABAÑA
     glm::mat4 modelCabana = glm::mat4(1.0f);
     modelCabana = glm::translate(modelCabana, posicionEstructura);
-
     modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    // Subimos la escala a 3.0f por si 1.0f era muy pequeña
     modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
 
     if (models.size() > 1) {
         models[1].Draw(*shader, modelCabana);
     }
 
-    // :::: ANIMACIÓN DE LA PUERTA ::::
+    // :::: ANIMACION DE LA PUERTA ::::
     if (abrirPuerta && anguloPuerta < 90.0f) {
-        anguloPuerta += 45.0f * deltaTime; // 45.0f es la velocidad a la que se abre
+        anguloPuerta += 45.0f * deltaTime;
     }
 
-    // :::: DIBUJAR LA PUERTA (models[2]) ::::
+    // :::: PUERTA ::::
     glm::mat4 modelPuerta = glm::mat4(1.0f);
     modelPuerta = glm::translate(modelPuerta, posicionEstructura);
 
-    // ATENCIÓN AQUÍ: Sumamos los grados base (gradosRotacion) + la animación (anguloPuerta)
     modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f)); // Recuerda usar la misma escala que le pusiste a la cabaña
+    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
 
     if (models.size() > 2) {
         models[2].Draw(*shader, modelPuerta);
     }
 
-    // :::: ESCENA INICIAL (EL AUTO) ::::
-    // Lo bajamos a 1.8f y lo ponemos en Z:23 para que lo veas apenas inicie el juego
-
     float orientacionAuto = 280.0f;
-    // 1. Dibujar el Auto
+    //Auto
     glm::mat4 modelAuto = glm::mat4(1.0f);
     modelAuto = glm::translate(modelAuto, posicionAuto);
     modelAuto = glm::rotate(modelAuto, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
     modelAuto = glm::scale(modelAuto, glm::vec3(3.1f));
 
-    // Solo dibujamos una vez el modelo 6
     if (models.size() > 6) {
         models[6].Draw(*shader, modelAuto);
     }
 
-    // 2. MATEMÁTICAS DE LA ANIMACIÓN DE LA CAJUELA
+    //ANIMACION DE LA CAJUELA
     if (abrirCajuela && anguloCajuela < 60.0f) {
         anguloCajuela += 45.0f * deltaTime;
     }
@@ -312,7 +286,7 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     if (anguloCajuela > 60.0f) anguloCajuela = 60.0f;
     if (anguloCajuela < 0.0f) anguloCajuela = 0.0f;
 
-    // 3. DIBUJAR LA CAJUELA
+    //CAJUELA
     glm::mat4 modelCajuela = glm::mat4(1.0f);
     modelCajuela = glm::translate(modelCajuela, posicionAuto);
     modelCajuela = glm::rotate(modelCajuela, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -320,62 +294,57 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     modelCajuela = glm::rotate(modelCajuela, glm::radians(-anguloCajuela), glm::vec3(0.0f, 0.0f, 1.0f));
     modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
 
-    // CORRECCIÓN: La cajuela es el modelo 7 (no el 9)
     if (models.size() > 7) {
         models[7].Draw(*shader, modelCajuela);
     }
 
-    // :::: LÓGICA DEL DISCO ::::
+    // :::: LOGICA DEL DISCO ::::
     if (tocadiscosEncendido) {
-        if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; // Acelera
+        if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; //Acelera
     }
     else {
-        if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; // Desacelera por fricción
+        if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; //Desacelera por friccion
         if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
     }
     anguloDisco += velocidadDisco * deltaTime;
 
-    // 1. Dibujar Base
+	//Base tocadiscos
     glm::mat4 modelBase = glm::mat4(1.0f);
     modelBase = glm::translate(modelBase, posicionTocadiscos);
     modelBase = glm::scale(modelBase, glm::vec3(0.5f));
     if (models.size() > 8) models[8].Draw(*shader, modelBase);
 
-    // 2. Dibujar Disco
+    //Disco
     glm::mat4 modelDisco = glm::mat4(1.0f);
     modelDisco = glm::translate(modelDisco, posicionTocadiscos);
-    // Rotamos sobre el eje Y (vertical)
     modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
     modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
     if (models.size() > 9) models[9].Draw(*shader, modelDisco);
 
-    // :::: MUEBLES DE LA CABAÑA ::::
-
-    // 12. MESA
+    // :::: MUEBLES :::
+    //MESA
     glm::mat4 modelMesa = glm::mat4(1.0f);
     modelMesa = glm::translate(modelMesa, posicionMesa);
     modelMesa = glm::scale(modelMesa, glm::vec3(0.5f)); // Ajusta si es muy grande/pequeña
     if (models.size() > 12) models[12].Draw(*shader, modelMesa);
 
-    // 13. BANCA
+    //BANCA
     glm::mat4 modelBanca = glm::mat4(1.0f);
     modelBanca = glm::translate(modelBanca, posicionBanca);
-    // Giramos la banca para que quede paralela a la mesa
     modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
     if (models.size() > 13) models[13].Draw(*shader, modelBanca);
 
-    // 14. SACO DE DORMIR
+    //SACO DE DORMIR
     glm::mat4 modelSaco = glm::mat4(1.0f);
     modelSaco = glm::translate(modelSaco, posicionSaco);
-    // Lo rotamos un poco para que se vea tirado al azar, no perfecto
     modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
     if (models.size() > 14) models[14].Draw(*shader, modelSaco);
 
     // :::: OBJETOS DENTRO DE LA CAJUELA ::::
 
-    // 10. CARTEL "MISSING"
+    //CARTEL "MISSING"
     glm::mat4 modelCartel = glm::mat4(1.0f);
     modelCartel = glm::translate(modelCartel, posicionCartel);
     modelCartel = glm::rotate(modelCartel, glm::radians(280.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -384,7 +353,7 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
     if (models.size() > 10) models[10].Draw(*shader, modelCartel);
 
-    // 11. BATERÍA
+    //BATERÍA
     glm::mat4 modelBateria = glm::mat4(1.0f);
     modelBateria = glm::translate(modelBateria, posicionBateria);
     modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -397,24 +366,24 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 {
     shader->setVec3("viewPos", camera.Position);
 
-    // 1. LUZ DE LUNA (Regresamos al terror de tu foto original)
+    //LUZ DE LUNA
     shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
     shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f); // Azul muy, muy oscuro
     shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f); // Luz directa casi nula
     shader->setVec3("dirLights[0].specular", 0.0f, 0.0f, 0.0f);
-    // :::: APAGADO ABSOLUTO DE LUCES EXTRAS (Evita la luz fantasma) ::::
+    // :::: APAGADO ABSOLUTO DE LUCES EXTRAS ::::
     for (int i = 1; i < 4; i++) {
         string num = std::to_string(i);
 
         // Limpiar DirLights
         shader->setVec3("dirLights[" + num + "].direction", glm::vec3(0.0f, -1.0f, 0.0f));
-        shader->setVec3("dirLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("dirLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f);
         shader->setVec3("dirLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
         shader->setVec3("dirLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
 
         // Limpiar PointLights
         shader->setVec3("pointLights[" + num + "].position", glm::vec3(0.0f, -10.0f, 0.0f));
-        shader->setVec3("pointLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("pointLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f);
         shader->setVec3("pointLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
         shader->setVec3("pointLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
         shader->setFloat("pointLights[" + num + "].constant", 1.0f);
@@ -422,34 +391,27 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
         // Limpiar SpotLights
         shader->setVec3("spotLights[" + num + "].direction", glm::vec3(0.0f, -1.0f, 0.0f));
         shader->setVec3("spotLights[" + num + "].position", glm::vec3(0.0f, -10.0f, 0.0f));
-        shader->setVec3("spotLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f); // <-- CULPABLE REPARADO
+        shader->setVec3("spotLights[" + num + "].ambient", 0.0f, 0.0f, 0.0f);
         shader->setVec3("spotLights[" + num + "].diffuse", 0.0f, 0.0f, 0.0f);
         shader->setVec3("spotLights[" + num + "].specular", 0.0f, 0.0f, 0.0f);
         shader->setFloat("spotLights[" + num + "].constant", 1.0f);
     }
 
-    // 2. TU LINTERNA (Control On/Off seguro)
     if (linternaEncendida)
     {
-        // TRUCO: Un puntito de luz justo en la punta de la linterna para que parezca encendida
-        // Calculamos la punta (un poco más adelante que el origen del spotLight)
         glm::vec3 puntaLinterna = camera.Position + (camera.Right * 0.45f) + (camera.Up * -0.35f) + (camera.Front * 0.2f);
 
         shader->setVec3("pointLights[0].position", puntaLinterna);
         shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
-        shader->setVec3("pointLights[0].diffuse", 1.0f, 1.0f, 0.8f); // Tono cálido
+        shader->setVec3("pointLights[0].diffuse", 1.0f, 1.0f, 0.8f);
         shader->setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-
-        // Estos valores súper altos hacen que la luz "muera" rapidísimo (no iluminará el piso, solo la linterna)
         shader->setFloat("pointLights[0].constant", 1.0f);
         shader->setFloat("pointLights[0].linear", 2.0f);
         shader->setFloat("pointLights[0].quadratic", 5.0f);
-
-        // Tu linterna (SpotLight) se queda igualita...
         shader->setVec3("spotLights[0].position", camera.Position + (camera.Right * 0.45f) + (camera.Up * -0.35f));
         shader->setVec3("spotLights[0].direction", camera.Front);
         shader->setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
-        shader->setVec3("spotLights[0].diffuse", 3.0f, 3.0f, 2.5f); // Tono cálido realista
+        shader->setVec3("spotLights[0].diffuse", 3.0f, 3.0f, 2.5f);
         shader->setVec3("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
         shader->setFloat("spotLights[0].constant", 1.0f);
         shader->setFloat("spotLights[0].linear", 0.02f);
@@ -459,7 +421,6 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
     }
     else
     {
-        // TODO APAGADO (Aseguramos que nada brille en la oscuridad)
         shader->setVec3("pointLights[0].ambient", 0.0f, 0.0f, 0.0f);
         shader->setVec3("pointLights[0].diffuse", 0.0f, 0.0f, 0.0f);
         shader->setVec3("pointLights[0].specular", 0.0f, 0.0f, 0.0f);
@@ -478,7 +439,5 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 
 void collisions()
 {
-    //Detecta las colisiones de las cajas individuales
-    //TODO LO DE LAS COLISIONES VA AQUÍ
     detectColls(collboxes, &camera, renderCollBox, collidedObject_callback);
 }

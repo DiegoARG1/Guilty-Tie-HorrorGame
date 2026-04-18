@@ -19,7 +19,7 @@ void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 pro
 void initScene(Shader ourShader);
 void collisions();
 
-// :::: CONTROL DE MANDO (Desactivado) ::::
+// :::: CONTROL DE MANDO  ::::
 void joystick_callback(int jid, int event) {}
 
 // :::: TECLADO PRINCIPAL ::::
@@ -48,18 +48,16 @@ void processInput(GLFWwindow* window)
     float distanciaCajuela = glm::distance(camera.Position, posicionAuto);
     float distToca = glm::distance(camera.Position, posicionTocadiscos);
 
-    // Interacción: Abrir Puerta (Tecla E)
+    // Interaccion:(Tecla E)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         if (!teclaEPulsada)
         {
-            // 1. ¿Estamos cerca de la cabaña? (Abrimos puerta)
             if (distanciaCabana < 5.0f)
             {
                 abrirPuerta = !abrirPuerta;
                 teclaEPulsada = true;
             }
-            // 2. ¿Estamos cerca del auto? (Abrimos cajuela)
             else if (distanciaCajuela < 5.0f)
             {
                 abrirCajuela = !abrirCajuela;
@@ -74,10 +72,10 @@ void processInput(GLFWwindow* window)
     }
     else
     {
-        teclaEPulsada = false; // Quitamos el seguro al soltar
+        teclaEPulsada = false;
     }
 
-    // Linterna (Tecla F) con seguro antispam
+	//Linterna:(Tecla F)
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
     {
         if (!teclaFPulsada)
@@ -96,7 +94,7 @@ void processInput(GLFWwindow* window)
         saltar = true;
 }
 
-// :::: EDITOR EN TIEMPO DE EJECUCIÓN (Desactivado por limpieza) ::::
+// :::: EDITOR EN TIEMPO DE EJECUCION::::
 void actionKeys(GLFWwindow* window) {}
 
 // :::: RESOLUCIÓN DE PANTALLA ::::
@@ -116,7 +114,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // Invertido porque las Y van de abajo hacia arriba
+    float yoffset = lastY - ypos;
 
     lastX = xpos;
     lastY = ypos;
@@ -124,19 +122,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-// :::: CLICS DEL MOUSE (Limpios de disparos) ::::
+// :::: CLICS DEL MOUSE ::::
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {}
 
-// :::: ZOOM (Scroll del Mouse) ::::
+// :::: ZOOM ::::
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
 }
 
-// :::: EVENTOS DE COLISIÓN (Limpios de Anakin y Carros) ::::
+// :::: EVENTOS DE COLISIÓN ::::
 void collidedObject_callback(string nameCollidedObject)
 {
-    // Aquí pondremos tu lógica de daño o sustos más adelante
+
 }
 
 void collidedObject_callback(string nameCollidedObject, string nameCollidedObject2) {}

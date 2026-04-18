@@ -67,7 +67,7 @@ std::vector<glm::vec3> posicionesBosque = {
     glm::vec3(-20.0f, 13.0f, 28.0f),
     glm::vec3(-10.0f, 13.0f, 20.0f),
     glm::vec3(0.0f, 13.0f, 26.0f),
-    // ¡Puedes seguir agregando coordenadas aquí separadas por comas para hacer un bosque masivo!
+   
 };
 
 //:::: INTERACCIÓN Y OBJETOS :::://
@@ -83,25 +83,25 @@ bool abrirCajuela = false;
 float anguloCajuela = 0.0f;
 glm::vec3 posicionAuto = glm::vec3(20.0f, 17.8f, 38.0f);
 
-// :::: TOCADISCOS ::::
+//Tocadiscos
 bool tocadiscosEncendido = false;
 float anguloDisco = 0.0f;
 float velocidadDisco = 0.0f; // Para que acelere poco a poco
 glm::vec3 posicionTocadiscos = glm::vec3(31.0f, 12.0f, -18.0f); // Ajusta según tu terreno
 
-//:::: OBJETOS :::://
+//Objetos
 glm::vec3 posicionMesa = glm::vec3(-27.0f, 15.3f, 10.0f);
 glm::vec3 posicionBanca = glm::vec3(23.0f, 16.0f, 28.0f);
 glm::vec3 posicionSaco = glm::vec3(-28.0f, 16.0f, 15.0f);
 glm::vec3 posicionBateria = glm::vec3(20.5f, 17.658f, 37.2f);
 glm::vec3 posicionCartel = glm::vec3(19.5f, 17.700f, 37.2f);
 
-//:::: AUDIO :::://
+//Audio
 Audio efecto1;
 Audio efecto2;
 bool sonar_ambiente = false;
 
-//:::::::::::::: VECTORES Y RENDERIZADO :::::::::::::://
+//Vectores y renderizado
 vector<glm::vec3> pointLightPositions;
 vector<glm::vec3> physicsObjectsPositions;
 vector<RigidModel> rigidModels;
@@ -121,20 +121,12 @@ bool renderLightingCubes = true;
 rbEnvironment physicsEnviroment;
 rbRigidBody piso, pared;
 
-
-/* =========================================================================
-   :::: ZONA DE CUARENTENA (VARIABLES QUE NO SE USARÁN EN ESTE JUEGO) ::::
-   Todo esto está comentado. Si al compilar tu main.cpp te marca error
-   en alguna de estas palabras, significa que tienes código viejo que
-   también debes borrar en tu main.cpp.
-   ========================================================================= */
-
    /*
-   // Controles de Joystick (A menos que planees usar control de Xbox)
+   // Controles de Joystick
    bool isJoyStick = false;
    double xJoy = 0.0; double yJoy = 0.0; double yLeftJoy = 0.0;
 
-   // Variables de Shooters (Balas, torretas, daño)
+   // Variables de Shooters
    int cargador = 5;
    float velocidad_bala = 3.0f;
    bool crear_bala = false;
@@ -148,7 +140,7 @@ rbRigidBody piso, pared;
    float trayecto_retroceso = 5.0f;
    bool golpe = true;
 
-   // Modelos específicos no usados
+   // Modelosno usados
    glm::vec3 posicion_anakin = glm::vec3(0.0, 2.5f, 5.0f);
    glm::vec3 posicion_trampa = glm::vec3(30.0f, 1.5f, 20.0f);
    bool trampa_move = false;
@@ -156,7 +148,7 @@ rbRigidBody piso, pared;
    bool destruir_enemigo_1 = false;
    map<int, pair<string, CollisionBox>> collboxes_enemigos;
 
-   // Mecánicas de Agua
+   // Agua
    bool waterout = false;
    glm::vec3 posicion_agua = glm::vec3(35.0f, 0.5f, 35.0f);
    float mov_agua_x = 0.0f;
@@ -175,7 +167,7 @@ rbRigidBody piso, pared;
    bool choco_torre = false;
    int limite_choque = 0;
 
-   // Lluvia (Descomentar si planeas añadir tormenta después)
+   // Lluvia
    float posicion_lluvia = 10.0f;
    float caida_lluvia = 0.5;
    float gotas_lluviaX[200];
