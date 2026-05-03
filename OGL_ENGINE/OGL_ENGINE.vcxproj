@@ -179,6 +179,7 @@
     <ClInclude Include="include\engine\utils.h" />
     <ClInclude Include="include\engine\variables.h" />
     <ClInclude Include="include\gl\GL.H" />
+    <ClInclude Include="ObjetosJuego.h" />
     <ClInclude Include="Primitivos.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="spritesec.h" />

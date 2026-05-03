@@ -49,6 +49,7 @@ public:
     {
         // load and configure shader
         this->TextShader = new Shader("shaders/text.vs", "shaders/text.fs");
+		this->TextShader->use();
         this->TextShader->setMat4("projection", glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f));
         this->TextShader->setInt("text", 0);
         // configure VAO/VBO for texture quads

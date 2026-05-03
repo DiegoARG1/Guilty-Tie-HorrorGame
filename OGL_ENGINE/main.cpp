@@ -58,6 +58,24 @@ int main()
     Terrain terrain("textures//terrenus_guilty2.png", texturePaths);
     SkyBox sky(1.0f, "6");
 
+    // :::: NUEVO: INICIALIZAR EL HUD DE TEXTO ::::
+    // Se le pasan las medidas de tu pantalla que tienes en tu variables.h
+    TextRenderer Text(SCR_WIDTH, SCR_HEIGHT);
+    Text.Load("fonts/fuente.ttf", 24); // Asegúrate de que el nombre coincida con tu archivo
+
+    // :::: NUEVO: PEGAR OBJETOS ALEATORIOS AL SUELO ::::
+    for (int i = 0; i < listaBaterias.size(); i++) {
+        glm::vec3 posActual = listaBaterias[i].getPosicion();
+
+        // Calculamos la matemática y le RESTAMOS los 2.5m del desfase visual del mapa
+        float alturaReal = (terrain.Superficie(posActual.x, posActual.z) * 300.0f) - 2.5f;
+
+        // Ahora sí, lo acomodamos para que descanse sobre el lodo
+        posActual.y = alturaReal + 0.2f;
+
+        listaBaterias[i].setPosicion(posActual);
+    }
+
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
@@ -110,7 +128,40 @@ int main()
         //Colocamos los ojos 1.8m
         camera.Position.y = camera.PosPersonaje.y + 1.8f;
 
+        // :::: MECÁNICA DE SUPERVIVENCIA: DRENAJE DE BATERÍA ::::
+        if (linternaEncendida) {
+            // Se gasta 2% por cada segundo real (gracias al deltaTime)
+            bateriaLinterna -= 0.5f * deltaTime;
+
+            // Si se acaba, la apagamos a la fuerza
+            if (bateriaLinterna <= 0.0f) {
+                bateriaLinterna = 0.0f;
+                linternaEncendida = false;
+            }
+        }
+
         collisions();
+
+        // :::: DIBUJAR HUD EN PANTALLA (BARRA RETRO) ::::
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_DEPTH_TEST);
+
+        int numRayitas = (int)((bateriaLinterna / 100.0f) * 20.0f);
+        std::string barraVisual = "[";
+        for (int i = 0; i < 20; i++) {
+            if (i < numRayitas) barraVisual += "|";
+            else barraVisual += " ";
+        }
+        barraVisual += "]";
+
+        std::string textoBateria = "Bateria " + barraVisual + " " + std::to_string((int)bateriaLinterna) + "%";
+
+        // Lo dibujamos en la esquina superior izquierda
+        Text.RenderText(textoBateria, 25.0f, 25.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+
+        glEnable(GL_DEPTH_TEST);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -157,6 +208,20 @@ void initScene(Shader ourShader)
     models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//13
     models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//14
     models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//15
+
+    // :::: GENERADOR DE BATERÍAS ALEATORIAS ::::
+    // Le damos una "semilla" basada en el reloj de tu PC para que siempre sea distinto
+    srand(static_cast<unsigned int>(time(0)));
+
+    for (int i = 0; i < 5; i++) {
+        // Genera coordenadas X y Z aleatorias entre -40 y 40
+        float randX = -40.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 80.0f));
+        float randZ = -40.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 80.0f));
+        glm::vec3 posAleatoria = glm::vec3(randX, 18.0f, randZ);
+
+        // Usamos la clase BateriaRecargable que creamos
+        listaBaterias.push_back(BateriaRecargable("Bateria_" + std::to_string(i), posAleatoria, 25.0f));
+    }
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -360,6 +425,20 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
 
     if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+
+    // :::: DIBUJAR BATERÍAS ALEATORIAS DEL BOSQUE ::::
+    for (int i = 0; i < listaBaterias.size(); i++) {
+        // El método isActivo() viene del Encapsulamiento de nuestra clase
+        if (listaBaterias[i].isActivo()) {
+            glm::mat4 modelBat = glm::mat4(1.0f);
+            modelBat = glm::translate(modelBat, listaBaterias[i].getPosicion());
+            // Las hacemos un poco más grandes para que el jugador las vea entre los árboles
+            modelBat = glm::scale(modelBat, glm::vec3(4.0f));
+
+            // Dibujamos el modelo 11 (que es tu Bateria.obj)
+            if (models.size() > 11) models[11].Draw(*shader, modelBat);
+        }
+    }
 }
 
 void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)

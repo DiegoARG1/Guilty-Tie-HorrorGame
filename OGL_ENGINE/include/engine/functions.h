@@ -68,6 +68,25 @@ void processInput(GLFWwindow* window)
                 tocadiscosEncendido = !tocadiscosEncendido;
                 teclaEPulsada = true;
             }
+            // :::: NUEVO: RECOGER BATERÍAS ALEATORIAS ::::
+            for (int i = 0; i < listaBaterias.size(); i++) {
+                // Verificamos que la batería siga activa (que no la hayas recogido ya)
+                if (listaBaterias[i].isActivo()) {
+                    float distBateria = glm::distance(camera.Position, listaBaterias[i].getPosicion());
+
+                    if (distBateria < 5.0f) {
+                        listaBaterias[i].interactuar(); // El polimorfismo hace que desaparezca
+
+                        bateriaLinterna += 35.0f; // Recargamos la variable de la linterna
+                        if (bateriaLinterna > 100.0f) bateriaLinterna = 100.0f; // Límite máximo
+
+                        std::cout << "Bateria recogida! Nivel de linterna: " << bateriaLinterna << "%" << std::endl;
+
+                        teclaEPulsada = true;
+                        break; // Solo recogemos una a la vez
+                    }
+                }
+            }
         }
     }
     else
