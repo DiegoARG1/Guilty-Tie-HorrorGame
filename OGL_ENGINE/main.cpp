@@ -84,7 +84,7 @@ int main()
 
         processInput(window);
 
-        //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
+        std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
         // FONDO NEGRO
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -137,6 +137,23 @@ int main()
             if (bateriaLinterna <= 0.0f) {
                 bateriaLinterna = 0.0f;
                 linternaEncendida = false;
+            }
+        }
+
+        // :::: REPRODUCTOR DE ANIMACIÓN STOP-MOTION (OSO) ::::
+        if (activandoOso) {
+            timerOso += deltaTime; // El cronómetro avanza
+
+            // Cambia de pose cada 0.15 segundos (Ajusta esto si quieres que voltee más lento o más rápido)
+            if (timerOso > 0.15f) {
+                timerOso = 0.0f;
+                frameOso++; // Pasamos a la siguiente pose
+
+                if (frameOso > 3) { // Si ya mostramos la última pose (Oso_Frame3)
+                    activandoOso = false;
+                    etapaHistoria = 2; // ¡Desaparece el oso y pasamos al Tocadiscos!
+                    std::cout << "Susto del Oso terminado. Ve por el tocadiscos." << std::endl;
+                }
             }
         }
 
@@ -208,6 +225,10 @@ void initScene(Shader ourShader)
     models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//13
     models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//14
     models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//15
+    models.push_back(Model("Oso_F0", "models/Oso/Oso_Pose1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Oso_F1", "models/Oso/Oso_Pose2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Oso_F2", "models/Oso/Oso_Pose3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Oso_F3", "models/Oso/Oso_Pose4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
 
     // :::: GENERADOR DE BATERÍAS ALEATORIAS ::::
     // Le damos una "semilla" basada en el reloj de tu PC para que siempre sea distinto
@@ -437,6 +458,28 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 
             // Dibujamos el modelo 11 (que es tu Bateria.obj)
             if (models.size() > 11) models[11].Draw(*shader, modelBat);
+        }
+    }
+
+    // :::: DIBUJAR AL OSO (Solo en la etapa 1) ::::
+    if (etapaHistoria == 1) {
+        glm::mat4 modelOso = glm::mat4(1.0f);
+
+        // 1. TRASLADAR: Lo ponemos en su posición fija
+        modelOso = glm::translate(modelOso, posicionFijaOso);
+
+        // 2. ROTAR: Gira el modelo en el eje Y (como si estuviera de pie)
+        // Cambia el "180.0f" por el ángulo que necesites (ej. 90.0f, -45.0f, etc.)
+        modelOso = glm::rotate(modelOso, glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // 3. ESCALAR: Hacemos el modelo más pequeño
+        // Si 1.0f es el tamaño normal, 0.5f es la mitad, 0.3f es un tercio, etc.
+        modelOso = glm::scale(modelOso, glm::vec3(0.3f));
+
+        // Magia: Dibujamos el frame correspondiente (empezando desde el índice 15)
+        int indiceOso = 15 + frameOso;
+        if (models.size() > indiceOso) {
+            models[indiceOso].Draw(*shader, modelOso);
         }
     }
 }

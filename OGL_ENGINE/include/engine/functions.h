@@ -68,6 +68,17 @@ void processInput(GLFWwindow* window)
                 tocadiscosEncendido = !tocadiscosEncendido;
                 teclaEPulsada = true;
             }
+
+            // :::: INTERACCIÓN CON EL OSO ::::
+            if (etapaHistoria == 1 && !activandoOso) {
+                float distOso = glm::distance(camera.Position, posicionFijaOso);
+                if (distOso < 8.0f) {
+                    activandoOso = true; // ¡Inicia la animación de Stop-Motion!
+                    teclaEPulsada = true;
+                    // Aquí luego pondremos tu Audio de tensión
+                }
+            }
+
             // :::: NUEVO: RECOGER BATERÍAS ALEATORIAS ::::
             for (int i = 0; i < listaBaterias.size(); i++) {
                 // Verificamos que la batería siga activa (que no la hayas recogido ya)
@@ -87,6 +98,7 @@ void processInput(GLFWwindow* window)
                     }
                 }
             }
+
         }
     }
     else

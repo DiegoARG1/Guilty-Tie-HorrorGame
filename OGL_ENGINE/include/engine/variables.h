@@ -73,6 +73,16 @@ std::vector<glm::vec3> posicionesBosque = {
    
 };
 
+// :::: CONTROL DE LA HISTORIA ::::
+// 0 = Control Xbox, 1 = Oso, 2 = Tocadiscos, 3 = Cabaña (Final)
+int etapaHistoria = 1;
+
+// :::: ANIMACIÓN STOP-MOTION DEL OSO ::::
+bool activandoOso = false; // Se vuelve true cuando presionas 'E'
+float timerOso = 0.0f;     // Cronómetro para cambiar de modelo
+int frameOso = 0;          // Del 0 al 3 (tus 4 poses)
+glm::vec3 posicionFijaOso = glm::vec3(18.77f, 15.4f, -23.5f); // Ponle la coordenada que te guste
+
 //:::: INTERACCIÓN Y OBJETOS :::://
 // 
 bool teclaEPulsada = false;
