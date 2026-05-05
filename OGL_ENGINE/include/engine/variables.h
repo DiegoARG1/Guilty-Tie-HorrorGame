@@ -63,14 +63,21 @@ glm::vec3 skyPos(0);
 // NUESTRA LISTA PARA EL BOSQUE TÉTRICO
 std::vector<glm::vec3> posicionesBosque = {
     glm::vec3(15.0f, 13.0f, 32.0f),
-    glm::vec3(14.0f, 13.0f, 0.0f),
     glm::vec3(30.0f, 13.0f, 0.0f),
     glm::vec3(0.0f, 13.0f, 0.0f),
     glm::vec3(-20.0f, 13.0f, -15.0f),
     glm::vec3(-20.0f, 13.0f, 28.0f),
     glm::vec3(-10.0f, 13.0f, 20.0f),
     glm::vec3(0.0f, 13.0f, 26.0f),
-   
+    glm::vec3(28.4f, 13.0f, 38.9f),
+    glm::vec3(26.5f, 13.0f, 17.0f),
+    glm::vec3(8.9f, 13.0f, 16.3f),
+    glm::vec3(-9.8f, 13.0f, 6.5f),
+    glm::vec3(4.0f, 13.0f, -14.4f),
+    glm::vec3(19.9f, 13.0f, -10.7f),
+	glm::vec3(-29.9f, 15.0f, 10.8f),// Este es un árbol más alto para que se vea detrás de la cabaña
+    glm::vec3(3.39f, 13.0f, 39.8f),
+    glm::vec3(12.2f, 13.0f, 48.3f),
 };
 
 // :::: CONTROL DE LA HISTORIA ::::
@@ -92,7 +99,7 @@ bool teclaEPulsada = false;
 //cabana
 bool abrirPuerta = false;
 float anguloPuerta = 0.0f;
-glm::vec3 posicionEstructura = glm::vec3(-10.0f, 17.4f, 15.0f);
+glm::vec3 posicionEstructura = glm::vec3(-2.0f, 17.4f, 15.0f);
 
 //auto
 bool abrirCajuela = false;
@@ -106,9 +113,9 @@ float velocidadDisco = 0.0f; // Para que acelere poco a poco
 glm::vec3 posicionTocadiscos = glm::vec3(31.0f, 12.0f, -18.0f); // Ajusta según tu terreno
 
 //Objetos
-glm::vec3 posicionMesa = glm::vec3(-27.0f, 15.3f, 10.0f);
+glm::vec3 posicionMesa = glm::vec3(-19.0f, 15.3f, 10.0f);
 glm::vec3 posicionBanca = glm::vec3(23.0f, 16.0f, 28.0f);
-glm::vec3 posicionSaco = glm::vec3(-28.0f, 16.0f, 15.0f);
+glm::vec3 posicionSaco = glm::vec3(-19.5f, 16.0f, 15.0f);
 glm::vec3 posicionBateria = glm::vec3(20.5f, 17.658f, 37.2f);
 std::vector<BateriaRecargable> listaBaterias;
 glm::vec3 posicionCartel = glm::vec3(19.5f, 17.700f, 37.2f);

@@ -17,6 +17,7 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions);
 void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection);
 // :::: NUESTRAS FUNCIONES MODULARES DE DIBUJADO ::::
 void dibujarLinterna(Shader* shader);
+void dibujarCarro(Shader* shader);
 void dibujarBosque(Shader* shader);
 void dibujarBateriasAleatorias(Shader* shader);
 void dibujarControlXbox(Shader* shader);

@@ -148,7 +148,7 @@ int main()
         // :::: MECÁNICA DE SUPERVIVENCIA: DRENAJE DE BATERÍA ::::
         if (linternaEncendida) {
             // Se gasta 2% por cada segundo real (gracias al deltaTime)
-            bateriaLinterna -= 0.5f * deltaTime;
+            bateriaLinterna -= 0.0f * deltaTime;
 
             // Si se acaba, la apagamos a la fuerza
             if (bateriaLinterna <= 0.0f) {
@@ -303,6 +303,7 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     dibujarLinterna(shader);
     dibujarBosque(shader);
     dibujarBateriasAleatorias(shader);
+	dibujarCarro(shader);
 
     // 2. MÁQUINA DE ESTADOS DE LA HISTORIA
     switch (etapaHistoria) {
@@ -434,7 +435,7 @@ void dibujarBosque(Shader* shader) {
         // Deforestación Mágica en la Etapa 3
         if (etapaHistoria >= 3) {
             float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
-            if (distACabana < 12.0f) dibujarArbol = false;
+            if (distACabana < 16.0f) dibujarArbol = false;
         }
 
         if (dibujarArbol) {
@@ -517,7 +518,26 @@ void dibujarCabanaFinal(Shader* shader) {
     modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
     modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
     if (models.size() > 2) models[2].Draw(*shader, modelPuerta);
+    // MUEBLES CABAÑA
+    glm::mat4 modelMesa = glm::mat4(1.0f);
+    modelMesa = glm::translate(modelMesa, posicionMesa);
+    modelMesa = glm::scale(modelMesa, glm::vec3(0.5f));
+    if (models.size() > 12) models[12].Draw(*shader, modelMesa);
 
+    glm::mat4 modelBanca = glm::mat4(1.0f);
+    modelBanca = glm::translate(modelBanca, posicionBanca);
+    modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
+    if (models.size() > 13) models[13].Draw(*shader, modelBanca);
+
+    glm::mat4 modelSaco = glm::mat4(1.0f);
+    modelSaco = glm::translate(modelSaco, posicionSaco);
+    modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
+    if (models.size() > 14) models[14].Draw(*shader, modelSaco);
+}
+
+void dibujarCarro(Shader* shader) {
     // AUTO Y CAJUELA
     float orientacionAuto = 280.0f;
     glm::mat4 modelAuto = glm::mat4(1.0f);
@@ -551,22 +571,4 @@ void dibujarCabanaFinal(Shader* shader) {
     modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
     if (models.size() > 11) models[11].Draw(*shader, modelBateria);
-
-    // MUEBLES CABAÑA
-    glm::mat4 modelMesa = glm::mat4(1.0f);
-    modelMesa = glm::translate(modelMesa, posicionMesa);
-    modelMesa = glm::scale(modelMesa, glm::vec3(0.5f));
-    if (models.size() > 12) models[12].Draw(*shader, modelMesa);
-
-    glm::mat4 modelBanca = glm::mat4(1.0f);
-    modelBanca = glm::translate(modelBanca, posicionBanca);
-    modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
-    if (models.size() > 13) models[13].Draw(*shader, modelBanca);
-
-    glm::mat4 modelSaco = glm::mat4(1.0f);
-    modelSaco = glm::translate(modelSaco, posicionSaco);
-    modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
-    if (models.size() > 14) models[14].Draw(*shader, modelSaco);
 }
