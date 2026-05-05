@@ -15,6 +15,14 @@ void actionKeys(GLFWwindow* window);
 
 void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions);
 void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection);
+// :::: NUESTRAS FUNCIONES MODULARES DE DIBUJADO ::::
+void dibujarLinterna(Shader* shader);
+void dibujarBosque(Shader* shader);
+void dibujarBateriasAleatorias(Shader* shader);
+void dibujarControlXbox(Shader* shader);
+void dibujarOsoStopMotion(Shader* shader);
+void dibujarTocadiscos(Shader* shader);
+void dibujarCabanaFinal(Shader* shader);
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection);
 void initScene(Shader ourShader);
 void collisions();

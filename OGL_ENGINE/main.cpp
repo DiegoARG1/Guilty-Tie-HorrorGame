@@ -295,228 +295,34 @@ void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 pro
 
 void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 {
+    // Configuraciones de luz base
     shader->setFloat("material.shininess", 10.0f);
     setMultipleLight(shader, pointLightPositions);
 
-    // :::: DIBUJAR LINTERNA EN LA MANO ::::
-    glm::mat4 modelLinterna = glm::mat4(1.0f);
+    // 1. OBJETOS GLOBALES (Siempre se dibujan sin importar la historia)
+    dibujarLinterna(shader);
+    dibujarBosque(shader);
+    dibujarBateriasAleatorias(shader);
 
-    modelLinterna = glm::translate(modelLinterna, camera.Position);
-    modelLinterna = glm::rotate(modelLinterna, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-    modelLinterna = glm::rotate(modelLinterna, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelLinterna = glm::translate(modelLinterna, glm::vec3(0.20f, -0.2f, 0.5f));
-    modelLinterna = glm::scale(modelLinterna, glm::vec3(0.07f));
-
-    if (!models.empty()) {
-        shader->setVec3("dirLights[0].ambient", 0.1f, 0.1f, 0.15f);
-        shader->setVec3("dirLights[0].diffuse", 0.0f, 0.0f, 0.0f);
-        models[0].Draw(*shader, modelLinterna);
-        shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
-        shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
-    }
-    // :::: GENERADOR DEL BOSQUE ::::
-    for (int i = 0; i < posicionesBosque.size(); i++)
-    {
-        // :::: NUEVO: DEFORESTACIÓN MÁGICA ::::
-        // Si estamos en la Etapa 3, borramos los árboles que estorben a la cabaña
-        bool dibujarArbol = true;
-        if (etapaHistoria >= 3) {
-            float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
-            if (distACabana < 12.0f) { // Radio de 12 metros alrededor de la cabaña
-                dibujarArbol = false;
-            }
-        }
-
-        if (dibujarArbol) {
-            glm::mat4 modelPino = glm::mat4(1.0f);
-            modelPino = glm::translate(modelPino, posicionesBosque[i]);
-
-            int tipoPino = 3 + (i % 3);
-            float escalaPino = 2.0f + ((i % 5) * 0.4f);
-            modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
-            modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-            if (models.size() > tipoPino) {
-                models[tipoPino].Draw(*shader, modelPino);
-            }
-        }
-    }
-
-    // :::: ATERRIZAJE DE LA ESTRUCTURA (Solo Etapa 3) ::::
-    if (etapaHistoria >= 3) {
-        float gradosRotacion = 180.0f;
-
-        //CABAÑA
-        glm::mat4 modelCabana = glm::mat4(1.0f);
-        modelCabana = glm::translate(modelCabana, posicionEstructura);
-        modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
-
-        if (models.size() > 1) {
-            models[1].Draw(*shader, modelCabana);
-        }
-
-        // :::: ANIMACION DE LA PUERTA ::::
-        if (abrirPuerta && anguloPuerta < 90.0f) {
-            anguloPuerta += 45.0f * deltaTime;
-        }
-
-        // :::: PUERTA ::::
-        glm::mat4 modelPuerta = glm::mat4(1.0f);
-        modelPuerta = glm::translate(modelPuerta, posicionEstructura);
-        modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
-
-        if (models.size() > 2) {
-            models[2].Draw(*shader, modelPuerta);
-        }
-        // :::: MUEBLES DE LA CABAÑA:::
-        //MESA
-        glm::mat4 modelMesa = glm::mat4(1.0f);
-        modelMesa = glm::translate(modelMesa, posicionMesa);
-        modelMesa = glm::scale(modelMesa, glm::vec3(0.5f)); // Ajusta si es muy grande/pequeña
-        if (models.size() > 12) models[12].Draw(*shader, modelMesa);
-        //SACO DE DORMIR
-        glm::mat4 modelSaco = glm::mat4(1.0f);
-        modelSaco = glm::translate(modelSaco, posicionSaco);
-        modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
-        if (models.size() > 14) models[14].Draw(*shader, modelSaco);
-    }
-
-    float orientacionAuto = 280.0f;
-    //Auto
-    glm::mat4 modelAuto = glm::mat4(1.0f);
-    modelAuto = glm::translate(modelAuto, posicionAuto);
-    modelAuto = glm::rotate(modelAuto, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelAuto = glm::scale(modelAuto, glm::vec3(3.1f));
-
-    if (models.size() > 6) {
-        models[6].Draw(*shader, modelAuto);
-    }
-
-    //ANIMACION DE LA CAJUELA
-    if (abrirCajuela && anguloCajuela < 60.0f) {
-        anguloCajuela += 45.0f * deltaTime;
-    }
-    else if (!abrirCajuela && anguloCajuela > 0.0f) {
-        anguloCajuela -= 45.0f * deltaTime;
-    }
-
-    if (anguloCajuela > 60.0f) anguloCajuela = 60.0f;
-    if (anguloCajuela < 0.0f) anguloCajuela = 0.0f;
-
-    //CAJUELA
-    glm::mat4 modelCajuela = glm::mat4(1.0f);
-    modelCajuela = glm::translate(modelCajuela, posicionAuto);
-    modelCajuela = glm::rotate(modelCajuela, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    modelCajuela = glm::rotate(modelCajuela, glm::radians(-anguloCajuela), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
-
-    if (models.size() > 7) {
-        models[7].Draw(*shader, modelCajuela);
-    }
-
-    // :::: LOGICA DEL DISCO ::::
-    if (etapaHistoria >= 2) {
-        if (tocadiscosEncendido) {
-            if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; //Acelera
-        }
-        else {
-            if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; //Desacelera por friccion
-            if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
-        }
-        anguloDisco += velocidadDisco * deltaTime;
-
-        //Base tocadiscos
-        glm::mat4 modelBase = glm::mat4(1.0f);
-        modelBase = glm::translate(modelBase, posicionTocadiscos);
-        modelBase = glm::scale(modelBase, glm::vec3(0.5f));
-        if (models.size() > 8) models[8].Draw(*shader, modelBase);
-
-        //Disco
-        glm::mat4 modelDisco = glm::mat4(1.0f);
-        modelDisco = glm::translate(modelDisco, posicionTocadiscos);
-        modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
-        if (models.size() > 9) models[9].Draw(*shader, modelDisco);
-    }
-
-    //BANCA
-    glm::mat4 modelBanca = glm::mat4(1.0f);
-    modelBanca = glm::translate(modelBanca, posicionBanca);
-    modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
-    if (models.size() > 13) models[13].Draw(*shader, modelBanca);
-
-    // :::: OBJETOS DENTRO DE LA CAJUELA ::::
-
-    //CARTEL "MISSING"
-    glm::mat4 modelCartel = glm::mat4(1.0f);
-    modelCartel = glm::translate(modelCartel, posicionCartel);
-    modelCartel = glm::rotate(modelCartel, glm::radians(280.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
-
-    if (models.size() > 10) models[10].Draw(*shader, modelCartel);
-
-    //BATERÍA
-    glm::mat4 modelBateria = glm::mat4(1.0f);
-    modelBateria = glm::translate(modelBateria, posicionBateria);
-    modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
-
-    if (models.size() > 11) models[11].Draw(*shader, modelBateria);
-
-    // :::: DIBUJAR BATERÍAS ALEATORIAS DEL BOSQUE ::::
-    for (int i = 0; i < listaBaterias.size(); i++) {
-        // El método isActivo() viene del Encapsulamiento de nuestra clase
-        if (listaBaterias[i].isActivo()) {
-            glm::mat4 modelBat = glm::mat4(1.0f);
-            modelBat = glm::translate(modelBat, listaBaterias[i].getPosicion());
-            // Las hacemos un poco más grandes para que el jugador las vea entre los árboles
-            modelBat = glm::scale(modelBat, glm::vec3(4.0f));
-
-            // Dibujamos el modelo 11 (que es tu Bateria.obj)
-            if (models.size() > 11) models[11].Draw(*shader, modelBat);
-        }
-    }
-
-    // :::: DIBUJAR AL OSO (Solo en la etapa 1) ::::
-    if (etapaHistoria == 1) {
-        glm::mat4 modelOso = glm::mat4(1.0f);
-
-        // 1. TRASLADAR: Lo ponemos en su posición fija
-        modelOso = glm::translate(modelOso, posicionFijaOso);
-
-        // 2. ROTAR: Gira el modelo en el eje Y (como si estuviera de pie)
-        // Cambia el "180.0f" por el ángulo que necesites (ej. 90.0f, -45.0f, etc.)
-        modelOso = glm::rotate(modelOso, glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // 3. ESCALAR: Hacemos el modelo más pequeño
-        // Si 1.0f es el tamaño normal, 0.5f es la mitad, 0.3f es un tercio, etc.
-        modelOso = glm::scale(modelOso, glm::vec3(0.3f));
-
-        // Magia: Dibujamos el frame correspondiente (empezando desde el índice 15)
-        int indiceOso = 15 + frameOso;
-        if (models.size() > indiceOso) {
-            models[indiceOso].Draw(*shader, modelOso);
-        }
-    }
-
-    // :::: DIBUJAR CONTROL DE XBOX (Solo en la etapa 0) ::::
-    if (etapaHistoria == 0) {
-        glm::mat4 modelControl = glm::mat4(1.0f);
-        modelControl = glm::translate(modelControl, posicionControl);
-        modelControl = glm::rotate(modelControl, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Por si sale acostado
-        modelControl = glm::scale(modelControl, glm::vec3(0.3f)); // Ajusta si sale muy grande o chico
-
-        // Si tu control es el modelo 20:
-        if (models.size() > 19) {
-            models[19].Draw(*shader, modelControl);
-        }
+    // 2. MÁQUINA DE ESTADOS DE LA HISTORIA
+    switch (etapaHistoria) {
+    case 0:
+        // Etapa inicial: Buscar el control
+        dibujarControlXbox(shader);
+        break;
+    case 1:
+        // Etapa de tensión: El susto del oso
+        dibujarOsoStopMotion(shader);
+        break;
+    case 2:
+        // Etapa de descubrimiento: El Tocadiscos apagado
+        dibujarTocadiscos(shader);
+        break;
+    case 3:
+        // Etapa Final: Lluvia de Sangre y Cabaña
+        dibujarTocadiscos(shader);  // Sigue girando
+        dibujarCabanaFinal(shader); // Cabaña, Auto, Muebles y Secretos
+        break;
     }
 }
 
@@ -598,4 +404,169 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 void collisions()
 {
     detectColls(collboxes, &camera, renderCollBox, collidedObject_callback);
+}
+// =================================================================
+// ::::::::::::: MODULOS DE RENDERIZADO (CLEAN CODE) :::::::::::::::
+// =================================================================
+
+void dibujarLinterna(Shader* shader) {
+    glm::mat4 modelLinterna = glm::mat4(1.0f);
+    modelLinterna = glm::translate(modelLinterna, camera.Position);
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(camera.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+    modelLinterna = glm::rotate(modelLinterna, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelLinterna = glm::translate(modelLinterna, glm::vec3(0.20f, -0.2f, 0.5f));
+    modelLinterna = glm::scale(modelLinterna, glm::vec3(0.07f));
+
+    if (!models.empty()) {
+        shader->setVec3("dirLights[0].ambient", 0.1f, 0.1f, 0.15f);
+        shader->setVec3("dirLights[0].diffuse", 0.0f, 0.0f, 0.0f);
+        models[0].Draw(*shader, modelLinterna);
+        shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
+        shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+    }
+}
+
+void dibujarBosque(Shader* shader) {
+    for (int i = 0; i < posicionesBosque.size(); i++) {
+        bool dibujarArbol = true;
+
+        // Deforestación Mágica en la Etapa 3
+        if (etapaHistoria >= 3) {
+            float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
+            if (distACabana < 12.0f) dibujarArbol = false;
+        }
+
+        if (dibujarArbol) {
+            glm::mat4 modelPino = glm::mat4(1.0f);
+            modelPino = glm::translate(modelPino, posicionesBosque[i]);
+            int tipoPino = 3 + (i % 3);
+            float escalaPino = 2.0f + ((i % 5) * 0.4f);
+            modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
+            modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            if (models.size() > tipoPino) models[tipoPino].Draw(*shader, modelPino);
+        }
+    }
+}
+
+void dibujarBateriasAleatorias(Shader* shader) {
+    for (int i = 0; i < listaBaterias.size(); i++) {
+        if (listaBaterias[i].isActivo()) {
+            glm::mat4 modelBat = glm::mat4(1.0f);
+            modelBat = glm::translate(modelBat, listaBaterias[i].getPosicion());
+            modelBat = glm::scale(modelBat, glm::vec3(4.0f));
+            if (models.size() > 11) models[11].Draw(*shader, modelBat);
+        }
+    }
+}
+
+void dibujarControlXbox(Shader* shader) {
+    glm::mat4 modelControl = glm::mat4(1.0f);
+    modelControl = glm::translate(modelControl, posicionControl);
+    modelControl = glm::rotate(modelControl, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    modelControl = glm::scale(modelControl, glm::vec3(0.3f));
+    if (models.size() > 19) models[19].Draw(*shader, modelControl);
+}
+
+void dibujarOsoStopMotion(Shader* shader) {
+    glm::mat4 modelOso = glm::mat4(1.0f);
+    modelOso = glm::translate(modelOso, posicionFijaOso);
+    modelOso = glm::rotate(modelOso, glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelOso = glm::scale(modelOso, glm::vec3(0.3f));
+
+    int indiceOso = 15 + frameOso;
+    if (models.size() > indiceOso) models[indiceOso].Draw(*shader, modelOso);
+}
+
+void dibujarTocadiscos(Shader* shader) {
+    if (tocadiscosEncendido) {
+        if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime;
+    }
+    else {
+        if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime;
+        if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
+    }
+    anguloDisco += velocidadDisco * deltaTime;
+
+    glm::mat4 modelBase = glm::mat4(1.0f);
+    modelBase = glm::translate(modelBase, posicionTocadiscos);
+    modelBase = glm::scale(modelBase, glm::vec3(0.5f));
+    if (models.size() > 8) models[8].Draw(*shader, modelBase);
+
+    glm::mat4 modelDisco = glm::mat4(1.0f);
+    modelDisco = glm::translate(modelDisco, posicionTocadiscos);
+    modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
+    if (models.size() > 9) models[9].Draw(*shader, modelDisco);
+}
+
+void dibujarCabanaFinal(Shader* shader) {
+    float gradosRotacion = 180.0f;
+
+    // CABAÑA Y PUERTA
+    glm::mat4 modelCabana = glm::mat4(1.0f);
+    modelCabana = glm::translate(modelCabana, posicionEstructura);
+    modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
+    if (models.size() > 1) models[1].Draw(*shader, modelCabana);
+
+    if (abrirPuerta && anguloPuerta < 90.0f) anguloPuerta += 45.0f * deltaTime;
+    glm::mat4 modelPuerta = glm::mat4(1.0f);
+    modelPuerta = glm::translate(modelPuerta, posicionEstructura);
+    modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
+    if (models.size() > 2) models[2].Draw(*shader, modelPuerta);
+
+    // AUTO Y CAJUELA
+    float orientacionAuto = 280.0f;
+    glm::mat4 modelAuto = glm::mat4(1.0f);
+    modelAuto = glm::translate(modelAuto, posicionAuto);
+    modelAuto = glm::rotate(modelAuto, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelAuto = glm::scale(modelAuto, glm::vec3(3.1f));
+    if (models.size() > 6) models[6].Draw(*shader, modelAuto);
+
+    if (abrirCajuela && anguloCajuela < 60.0f) anguloCajuela += 45.0f * deltaTime;
+    else if (!abrirCajuela && anguloCajuela > 0.0f) anguloCajuela -= 45.0f * deltaTime;
+    if (anguloCajuela > 60.0f) anguloCajuela = 60.0f;
+    if (anguloCajuela < 0.0f) anguloCajuela = 0.0f;
+
+    glm::mat4 modelCajuela = glm::mat4(1.0f);
+    modelCajuela = glm::translate(modelCajuela, posicionAuto);
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelCajuela = glm::rotate(modelCajuela, glm::radians(-anguloCajuela), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
+    if (models.size() > 7) models[7].Draw(*shader, modelCajuela);
+
+    // OBJETOS EN CAJUELA
+    glm::mat4 modelCartel = glm::mat4(1.0f);
+    modelCartel = glm::translate(modelCartel, posicionCartel);
+    modelCartel = glm::rotate(modelCartel, glm::radians(280.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
+    if (models.size() > 10) models[10].Draw(*shader, modelCartel);
+
+    glm::mat4 modelBateria = glm::mat4(1.0f);
+    modelBateria = glm::translate(modelBateria, posicionBateria);
+    modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
+    if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+
+    // MUEBLES CABAÑA
+    glm::mat4 modelMesa = glm::mat4(1.0f);
+    modelMesa = glm::translate(modelMesa, posicionMesa);
+    modelMesa = glm::scale(modelMesa, glm::vec3(0.5f));
+    if (models.size() > 12) models[12].Draw(*shader, modelMesa);
+
+    glm::mat4 modelBanca = glm::mat4(1.0f);
+    modelBanca = glm::translate(modelBanca, posicionBanca);
+    modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
+    if (models.size() > 13) models[13].Draw(*shader, modelBanca);
+
+    glm::mat4 modelSaco = glm::mat4(1.0f);
+    modelSaco = glm::translate(modelSaco, posicionSaco);
+    modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
+    if (models.size() > 14) models[14].Draw(*shader, modelSaco);
 }
