@@ -63,16 +63,38 @@ void processInput(GLFWwindow* window)
                 abrirCajuela = !abrirCajuela;
                 teclaEPulsada = true;
             }
-            else if (distToca < 5.0f)
-            {
-                tocadiscosEncendido = !tocadiscosEncendido;
-                teclaEPulsada = true;
+            // :::: INTERACCIÓN CON EL TOCADISCOS (ETAPA 2) ::::
+            if (etapaHistoria == 2) {
+                float distToca = glm::distance(camera.Position, posicionTocadiscos);
+                if (distToca < 5.0f) {
+                    tocadiscosEncendido = true; // Empieza a girar
+                    etapaHistoria = 3; // ¡Inicia el final! (Aparición de cabaña y lluvia)
+                    teclaEPulsada = true;
+
+                    std::cout << "Tocadiscos activado. ¡Empieza la lluvia de sangre!" << std::endl;
+                    // Aquí conectaremos el audio de la canción distorsionada
+                }
+            }
+
+            // :::: INTERACCIÓN CON EL CONTROL (ETAPA 0) ::::
+            if (etapaHistoria == 0) {
+                float distControl = glm::distance(camera.Position, posicionControl);
+
+                if (distControl < 5.0f) {
+                    etapaHistoria = 1; // ¡Avanzamos a la etapa del oso!
+                    teclaEPulsada = true;
+
+                    std::cout << "Control recogido. 'Hermano, juegas conmigo?'" << std::endl;
+                    std::cout << "¡La entidad ha despertado! Busca el oso." << std::endl;
+
+                    // Aquí más adelante pondremos: efecto1.Play(); 
+                }
             }
 
             // :::: INTERACCIÓN CON EL OSO ::::
             if (etapaHistoria == 1 && !activandoOso) {
                 float distOso = glm::distance(camera.Position, posicionFijaOso);
-                if (distOso < 8.0f) {
+                if (distOso < 5.0f) {
                     activandoOso = true; // ¡Inicia la animación de Stop-Motion!
                     teclaEPulsada = true;
                     // Aquí luego pondremos tu Audio de tensión

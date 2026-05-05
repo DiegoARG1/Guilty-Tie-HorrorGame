@@ -76,6 +76,23 @@ int main()
         listaBaterias[i].setPosicion(posActual);
     }
 
+    // :::: ETAPA 0: GENERAR EL CONTROL (SISTEMA DE SPAWN POINTS) ::::
+    // 1. Creamos una lista de coordenadas 100% seguras y probadas
+    std::vector<glm::vec3> posiblesSpawns = {
+        glm::vec3(12.0f, 18.0f, 32.0f),   // Cerca del auto
+        //glm::vec3(-20.0f, 18.0f, 5.0f),   // Cerca de la mesa y la banca
+        //glm::vec3(25.0f, 18.0f, -25.0f),  // En una zona vacía del bosque
+        //glm::vec3(0.0f, 18.0f, 10.0f)     // A mitad del camino inicial
+    };
+
+    // 2. Elegimos un número de índice al azar (del 0 al 3)
+    int indiceSpawn = rand() % posiblesSpawns.size();
+    posicionControl = posiblesSpawns[indiceSpawn];
+
+    // 3. Lo pegamos al suelo en esa zona segura
+    float alturaControl = (terrain.Superficie(posicionControl.x, posicionControl.z) * 300.0f) - 2.5f;
+    posicionControl.y = alturaControl + 0.3f; // Un poquito más arriba para que destaque en el pasto
+
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
@@ -225,10 +242,12 @@ void initScene(Shader ourShader)
     models.push_back(Model("Mesa", "models/Mesa/Mesa.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//13
     models.push_back(Model("Banca", "models/Banca/Banca.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//14
     models.push_back(Model("Saco", "models/SacoDormir/SacoDormir.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//15
-    models.push_back(Model("Oso_F0", "models/Oso/Oso_Pose1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Oso_F1", "models/Oso/Oso_Pose2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Oso_F2", "models/Oso/Oso_Pose3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
-    models.push_back(Model("Oso_F3", "models/Oso/Oso_Pose4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Oso_F0", "models/Oso/Oso_Pose1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//16
+    models.push_back(Model("Oso_F1", "models/Oso/Oso_Pose2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//17
+    models.push_back(Model("Oso_F2", "models/Oso/Oso_Pose3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//18
+    models.push_back(Model("Oso_F3", "models/Oso/Oso_Pose4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//19
+    models.push_back(Model("Control", "models/Control/Control.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+
 
     // :::: GENERADOR DE BATERÍAS ALEATORIAS ::::
     // Le damos una "semilla" basada en el reloj de tu PC para que siempre sea distinto
@@ -299,55 +318,71 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     // :::: GENERADOR DEL BOSQUE ::::
     for (int i = 0; i < posicionesBosque.size(); i++)
     {
-        glm::mat4 modelPino = glm::mat4(1.0f);
-        modelPino = glm::translate(modelPino, posicionesBosque[i]);
+        // :::: NUEVO: DEFORESTACIÓN MÁGICA ::::
+        // Si estamos en la Etapa 3, borramos los árboles que estorben a la cabaña
+        bool dibujarArbol = true;
+        if (etapaHistoria >= 3) {
+            float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
+            if (distACabana < 12.0f) { // Radio de 12 metros alrededor de la cabaña
+                dibujarArbol = false;
+            }
+        }
 
-        //Variedad de modelos
-        int tipoPino = 3 + (i % 3);
+        if (dibujarArbol) {
+            glm::mat4 modelPino = glm::mat4(1.0f);
+            modelPino = glm::translate(modelPino, posicionesBosque[i]);
 
-        //Escala pseudo-aleatoria
-        // Hace que algunos pinos sean gigantes y otros pequeños para que no se vean clonados
-        float escalaPino = 2.0f + ((i % 5) * 0.4f);
-        modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
+            int tipoPino = 3 + (i % 3);
+            float escalaPino = 2.0f + ((i % 5) * 0.4f);
+            modelPino = glm::scale(modelPino, glm::vec3(escalaPino));
+            modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        //Rotacion pseudo-aleatoria.
-        //Gira cada pino un angulo distinto para que sus ramas apunten a lugares diferentes
-        modelPino = glm::rotate(modelPino, glm::radians(i * 45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        if (models.size() > tipoPino) {
-            models[tipoPino].Draw(*shader, modelPino);
+            if (models.size() > tipoPino) {
+                models[tipoPino].Draw(*shader, modelPino);
+            }
         }
     }
 
-    // :::: ATERRIZAJE DE LA ESTRUCTURA ::::
+    // :::: ATERRIZAJE DE LA ESTRUCTURA (Solo Etapa 3) ::::
+    if (etapaHistoria >= 3) {
+        float gradosRotacion = 180.0f;
 
-    float gradosRotacion = 180.0f;
+        //CABAÑA
+        glm::mat4 modelCabana = glm::mat4(1.0f);
+        modelCabana = glm::translate(modelCabana, posicionEstructura);
+        modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
 
-    //CABAÑA
-    glm::mat4 modelCabana = glm::mat4(1.0f);
-    modelCabana = glm::translate(modelCabana, posicionEstructura);
-    modelCabana = glm::rotate(modelCabana, glm::radians(gradosRotacion), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelCabana = glm::scale(modelCabana, glm::vec3(1.0f));
+        if (models.size() > 1) {
+            models[1].Draw(*shader, modelCabana);
+        }
 
-    if (models.size() > 1) {
-        models[1].Draw(*shader, modelCabana);
-    }
+        // :::: ANIMACION DE LA PUERTA ::::
+        if (abrirPuerta && anguloPuerta < 90.0f) {
+            anguloPuerta += 45.0f * deltaTime;
+        }
 
-    // :::: ANIMACION DE LA PUERTA ::::
-    if (abrirPuerta && anguloPuerta < 90.0f) {
-        anguloPuerta += 45.0f * deltaTime;
-    }
+        // :::: PUERTA ::::
+        glm::mat4 modelPuerta = glm::mat4(1.0f);
+        modelPuerta = glm::translate(modelPuerta, posicionEstructura);
+        modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
 
-    // :::: PUERTA ::::
-    glm::mat4 modelPuerta = glm::mat4(1.0f);
-    modelPuerta = glm::translate(modelPuerta, posicionEstructura);
-
-    modelPuerta = glm::rotate(modelPuerta, glm::radians(gradosRotacion + anguloPuerta), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    modelPuerta = glm::scale(modelPuerta, glm::vec3(1.0f));
-
-    if (models.size() > 2) {
-        models[2].Draw(*shader, modelPuerta);
+        if (models.size() > 2) {
+            models[2].Draw(*shader, modelPuerta);
+        }
+        // :::: MUEBLES DE LA CABAÑA:::
+        //MESA
+        glm::mat4 modelMesa = glm::mat4(1.0f);
+        modelMesa = glm::translate(modelMesa, posicionMesa);
+        modelMesa = glm::scale(modelMesa, glm::vec3(0.5f)); // Ajusta si es muy grande/pequeña
+        if (models.size() > 12) models[12].Draw(*shader, modelMesa);
+        //SACO DE DORMIR
+        glm::mat4 modelSaco = glm::mat4(1.0f);
+        modelSaco = glm::translate(modelSaco, posicionSaco);
+        modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
+        if (models.size() > 14) models[14].Draw(*shader, modelSaco);
     }
 
     float orientacionAuto = 280.0f;
@@ -385,34 +420,29 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     }
 
     // :::: LOGICA DEL DISCO ::::
-    if (tocadiscosEncendido) {
-        if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; //Acelera
+    if (etapaHistoria >= 2) {
+        if (tocadiscosEncendido) {
+            if (velocidadDisco < 200.0f) velocidadDisco += 50.0f * deltaTime; //Acelera
+        }
+        else {
+            if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; //Desacelera por friccion
+            if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
+        }
+        anguloDisco += velocidadDisco * deltaTime;
+
+        //Base tocadiscos
+        glm::mat4 modelBase = glm::mat4(1.0f);
+        modelBase = glm::translate(modelBase, posicionTocadiscos);
+        modelBase = glm::scale(modelBase, glm::vec3(0.5f));
+        if (models.size() > 8) models[8].Draw(*shader, modelBase);
+
+        //Disco
+        glm::mat4 modelDisco = glm::mat4(1.0f);
+        modelDisco = glm::translate(modelDisco, posicionTocadiscos);
+        modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
+        if (models.size() > 9) models[9].Draw(*shader, modelDisco);
     }
-    else {
-        if (velocidadDisco > 0.0f) velocidadDisco -= 30.0f * deltaTime; //Desacelera por friccion
-        if (velocidadDisco < 0.0f) velocidadDisco = 0.0f;
-    }
-    anguloDisco += velocidadDisco * deltaTime;
-
-	//Base tocadiscos
-    glm::mat4 modelBase = glm::mat4(1.0f);
-    modelBase = glm::translate(modelBase, posicionTocadiscos);
-    modelBase = glm::scale(modelBase, glm::vec3(0.5f));
-    if (models.size() > 8) models[8].Draw(*shader, modelBase);
-
-    //Disco
-    glm::mat4 modelDisco = glm::mat4(1.0f);
-    modelDisco = glm::translate(modelDisco, posicionTocadiscos);
-    modelDisco = glm::rotate(modelDisco, glm::radians(anguloDisco), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelDisco = glm::scale(modelDisco, glm::vec3(0.5f));
-    if (models.size() > 9) models[9].Draw(*shader, modelDisco);
-
-    // :::: MUEBLES :::
-    //MESA
-    glm::mat4 modelMesa = glm::mat4(1.0f);
-    modelMesa = glm::translate(modelMesa, posicionMesa);
-    modelMesa = glm::scale(modelMesa, glm::vec3(0.5f)); // Ajusta si es muy grande/pequeña
-    if (models.size() > 12) models[12].Draw(*shader, modelMesa);
 
     //BANCA
     glm::mat4 modelBanca = glm::mat4(1.0f);
@@ -420,13 +450,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     modelBanca = glm::rotate(modelBanca, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     modelBanca = glm::scale(modelBanca, glm::vec3(3.0f));
     if (models.size() > 13) models[13].Draw(*shader, modelBanca);
-
-    //SACO DE DORMIR
-    glm::mat4 modelSaco = glm::mat4(1.0f);
-    modelSaco = glm::translate(modelSaco, posicionSaco);
-    modelSaco = glm::rotate(modelSaco, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelSaco = glm::scale(modelSaco, glm::vec3(0.2f));
-    if (models.size() > 14) models[14].Draw(*shader, modelSaco);
 
     // :::: OBJETOS DENTRO DE LA CAJUELA ::::
 
@@ -480,6 +503,19 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         int indiceOso = 15 + frameOso;
         if (models.size() > indiceOso) {
             models[indiceOso].Draw(*shader, modelOso);
+        }
+    }
+
+    // :::: DIBUJAR CONTROL DE XBOX (Solo en la etapa 0) ::::
+    if (etapaHistoria == 0) {
+        glm::mat4 modelControl = glm::mat4(1.0f);
+        modelControl = glm::translate(modelControl, posicionControl);
+        modelControl = glm::rotate(modelControl, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // Por si sale acostado
+        modelControl = glm::scale(modelControl, glm::vec3(0.3f)); // Ajusta si sale muy grande o chico
+
+        // Si tu control es el modelo 20:
+        if (models.size() > 19) {
+            models[19].Draw(*shader, modelControl);
         }
     }
 }
