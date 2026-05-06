@@ -180,10 +180,8 @@ public:
 
         glBindVertexArray(VAO);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cubemapTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawElements(GL_TRIANGLE_STRIP, 36, GL_UNSIGNED_INT, 0);
-        //glBindVertexArray(0);
-        //shader->notUse();
     }
     Shader *getShader()
     {

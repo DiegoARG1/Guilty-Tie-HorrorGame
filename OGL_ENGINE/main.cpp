@@ -57,6 +57,7 @@ int main()
 
     Terrain terrain("textures//terrenus_guilty2.png", texturePaths);
     SkyBox sky(1.0f, "6");
+    SkyBox skySangre(1.0f, "sangre");
 
     // :::: NUEVO: INICIALIZAR EL HUD DE TEXTO ::::
     // Se le pasan las medidas de tu pantalla que tienes en tu variables.h
@@ -114,7 +115,13 @@ int main()
         ourShader.setMat4("view", view);
 
         drawModels(&ourShader, view, projection);
-        loadEnviroment(&terrain, &sky, view, projection);
+        
+        if (etapaHistoria < 3) {
+            loadEnviroment(&terrain, &sky, view, projection);
+        }
+        else {
+            loadEnviroment(&terrain, &skySangre, view, projection);
+        }
 
         // Fisicas basicas (Gravedad y salto)
         if (saltar) {
@@ -223,7 +230,8 @@ int main()
     }
 
     delete[] texturePaths;
-    sky.Release();
+	sky.Release();
+    skySangre.Release();
     terrain.Release();
     glfwTerminate();
 
@@ -401,11 +409,22 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 {
     shader->setVec3("viewPos", camera.Position);
 
-    //LUZ DE LUNA
-    shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f); // Azul muy, muy oscuro
-    shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f); // Luz directa casi nula
+    // :::: LUZ AMBIENTAL DINÁMICA (LUNA O SANGRE) ::::
+    if (etapaHistoria < 3) {
+        // Luz de Luna normal (Azulada y tranquila)
+        shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+        shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
+        shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+    }
+    else {
+        // Luz de Sangre (Roja, oscura y tensa)
+        shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+        // Aumentamos un poco el ambient en rojo para que todo se tiña, pero bajamos el azul a cero
+        shader->setVec3("dirLights[0].ambient", 0.06f, 0.0f, 0.0f);
+        shader->setVec3("dirLights[0].diffuse", 0.04f, 0.0f, 0.0f);
+    }
     shader->setVec3("dirLights[0].specular", 0.0f, 0.0f, 0.0f);
+
     // :::: APAGADO ABSOLUTO DE LUCES EXTRAS ::::
     for (int i = 1; i < 4; i++) {
         string num = std::to_string(i);
