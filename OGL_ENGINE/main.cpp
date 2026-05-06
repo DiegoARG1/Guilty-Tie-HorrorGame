@@ -101,7 +101,7 @@ int main()
 
         processInput(window);
 
-        std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
+        //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
         // FONDO NEGRO
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -148,7 +148,7 @@ int main()
         // :::: MECÁNICA DE SUPERVIVENCIA: DRENAJE DE BATERÍA ::::
         if (linternaEncendida) {
             // Se gasta 2% por cada segundo real (gracias al deltaTime)
-            bateriaLinterna -= 0.0f * deltaTime;
+            bateriaLinterna -= 0.3f * deltaTime;
 
             // Si se acaba, la apagamos a la fuerza
             if (bateriaLinterna <= 0.0f) {
@@ -268,15 +268,14 @@ void initScene(Shader ourShader)
     models.push_back(Model("Oso_F1", "models/Oso/Oso_Pose2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//17
     models.push_back(Model("Oso_F2", "models/Oso/Oso_Pose3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//18
     models.push_back(Model("Oso_F3", "models/Oso/Oso_Pose4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//19
-    models.push_back(Model("Control", "models/Control/Control.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));
+    models.push_back(Model("Control", "models/Control/Control.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//20
 
 
-    // :::: GENERADOR DE BATERÍAS ALEATORIAS ::::
-    // Le damos una "semilla" basada en el reloj de tu PC para que siempre sea distinto
+    // :::: GENERADOR DE BATERIAS ALEATORIAS ::::
     srand(static_cast<unsigned int>(time(0)));
 
     for (int i = 0; i < 5; i++) {
-        // Genera coordenadas X y Z aleatorias entre -40 y 40
+
         float randX = -40.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 80.0f));
         float randZ = -40.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 80.0f));
         glm::vec3 posAleatoria = glm::vec3(randX, 18.0f, randZ);
@@ -300,6 +299,27 @@ void initScene(Shader ourShader)
     propsLluvia.Velocity = glm::vec3(0.0f, -50.0f, 0.0f); // Caen directo hacia abajo rápido
     propsLluvia.VelocityVariation = glm::vec3(2.0f, 3.0f, 2.0f); // Ligera variación por el viento
     propsLluvia.LifeTime = 10.0f; // Duran 1.5 segundos antes de desaparecer al tocar el suelo
+
+    // :::: COLISIONES DEL ENTORNO (CARRO Y ÁRBOLES) ::::
+
+    // 1. EL CARRO (ID: 10)
+    // El carro está rotado 280 grados (casi viendo hacia el eje X). 
+    // Haremos una caja más larga en X y más angosta en Z.
+    CollisionBox cajaCarro(posicionAuto + glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(2.5f, 3.0f, 7.0f), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f), false, false);
+    collboxes.insert({ 10, {"Carro", cajaCarro} });
+
+    // 2. LOS ÁRBOLES (IDs del 200 en adelante)
+    for (int i = 0; i < posicionesBosque.size(); i++) {
+        // 1. Calculamos la misma escala visual que usa tu dibujado
+        float escalaPino = 2.0f + ((i % 5) * 0.4f);
+
+        // 2. Definimos un radio base para el tronco (ej. 25 centímetros) y lo multiplicamos por la escala
+        float radioTronco = 0.42f * escalaPino;
+
+        // 3. Le pasamos esa variable dinámica a las medidas X y Z de la caja
+        CollisionBox cajaArbol(posicionesBosque[i], glm::vec3(radioTronco, 8.0f, radioTronco), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), false, false);
+        collboxes.insert({ 200 + i, {"Arbol_" + std::to_string(i), cajaArbol} });
+    }
 
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
@@ -369,6 +389,11 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         }
 
         break;
+    }
+    // :::: NUEVO: DIBUJADOR DE CAJAS DE COLISIÓN (DEBUG MODO) ::::
+    // Esto dibujará las líneas de colores si la caja tiene el 'withBox = true'
+    for (auto& item : collboxes) {
+        item.second.second.draw(view, projection);
     }
 }
 
@@ -449,7 +474,50 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 
 void collisions()
 {
-    detectColls(collboxes, &camera, renderCollBox, collidedObject_callback);
+    // 2. :::: NUESTRO SISTEMA PROFESIONAL DE COLISIÓN (AABB) ::::
+    // Esto sobrescribe el bug del motor y crea colisiones físicas reales y sólidas.
+
+    float radioCam = 0.2f; // El grosor físico de tu jugador
+    glm::vec3 camMin = camera.Position - glm::vec3(radioCam);
+    glm::vec3 camMax = camera.Position + glm::vec3(radioCam);
+
+    // CAMBIO AQUÍ: Usamos un iterador clásico para evitar errores de versión de C++
+    for (auto const& item : collboxes) {
+
+        // item.second es el 'pair' que guarda el string y la caja.
+        // Por lo tanto, item.second.second es la CollisionBox.
+        CollisionBox box = item.second.second;
+
+        // Verificamos si los "cubos" se están entrelazando en los 3 ejes espaciales
+        bool colX = camMax.x > box.min.x && camMin.x < box.max.x;
+        bool colY = camMax.y > box.min.y && camMin.y < box.max.y;
+        bool colZ = camMax.z > box.min.z && camMin.z < box.max.z;
+
+        if (colX && colY && colZ) {
+            // ¡Chocaste! Calculamos cuántos centímetros penetraste la pared por cada lado
+            float penIzq = camMax.x - box.min.x;
+            float penDer = box.max.x - camMin.x;
+            float penAtras = camMax.z - box.min.z;
+            float penFrente = box.max.z - camMin.z;
+
+            // Encontramos la cara de la caja que está más cerca de ti
+            // (Calculamos el mínimo manualmente para evitar conflictos con Windows)
+            float minX = (penIzq < penDer) ? penIzq : penDer;
+            float minZ = (penAtras < penFrente) ? penAtras : penFrente;
+
+            // Te expulsamos de la caja exactamente por donde entraste
+            if (minX < minZ) {
+                camera.Position.x += (penIzq < penDer) ? -minX : minX;
+            }
+            else {
+                camera.Position.z += (penAtras < penFrente) ? -minZ : minZ;
+            }
+
+            // Sincronizamos la variable interna de tu cámara para que el motor no pelee con nuestro código
+            camera.PosPersonaje.x = camera.Position.x;
+            camera.PosPersonaje.z = camera.Position.z;
+        }
+    }
 }
 // =================================================================
 // ::::::::::::: MODULOS DE RENDERIZADO (CLEAN CODE) :::::::::::::::
@@ -584,7 +652,7 @@ void dibujarCabanaFinal(Shader* shader) {
 
 void dibujarCarro(Shader* shader) {
     // AUTO Y CAJUELA
-    float orientacionAuto = 280.0f;
+    float orientacionAuto = 270.0f;
     glm::mat4 modelAuto = glm::mat4(1.0f);
     modelAuto = glm::translate(modelAuto, posicionAuto);
     modelAuto = glm::rotate(modelAuto, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -603,17 +671,33 @@ void dibujarCarro(Shader* shader) {
     modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
     if (models.size() > 7) models[7].Draw(*shader, modelCajuela);
 
-    // OBJETOS EN CAJUELA
-    glm::mat4 modelCartel = glm::mat4(1.0f);
-    modelCartel = glm::translate(modelCartel, posicionCartel);
-    modelCartel = glm::rotate(modelCartel, glm::radians(280.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
-    if (models.size() > 10) models[10].Draw(*shader, modelCartel);
+    // :::: OBJETOS EN CAJUELA (Solo se dibujan si está abierta) ::::
+    if (anguloCajuela > 20.0f) {
+		// CARTEL
+        glm::mat4 modelCartel = glm::mat4(1.0f);
+        modelCartel = glm::translate(modelCartel, posicionAuto); // Sigue al carro
+        modelCartel = glm::rotate(modelCartel, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    glm::mat4 modelBateria = glm::mat4(1.0f);
-    modelBateria = glm::translate(modelBateria, posicionBateria);
-    modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
-    if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+        // OFFSET LOCAL: Basado en tus coordenadas originales (19.5, 17.7, 37.2)
+        // He ajustado los valores para compensar el giro de 10 grados
+        modelCartel = glm::translate(modelCartel, glm::vec3(-0.8f, 0.0f, 0.5f));
+
+        // Rotación relativa: el cartel estaba a 280 grados y el carro ahora a 270
+        modelCartel = glm::rotate(modelCartel, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
+        if (models.size() > 10) models[10].Draw(*shader, modelCartel);
+
+        // BATERÍA
+        glm::mat4 modelBateria = glm::mat4(1.0f);
+        modelBateria = glm::translate(modelBateria, posicionAuto);
+        modelBateria = glm::rotate(modelBateria, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // OFFSET LOCAL: Basado en (20.5, 17.658, 37.2)
+        modelBateria = glm::translate(modelBateria, glm::vec3(-0.8f, -0.14f, -0.5f));
+
+        modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
+        if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+    }
 }

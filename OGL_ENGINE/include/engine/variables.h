@@ -86,7 +86,7 @@ std::vector<glm::vec3> posicionesBosque = {
 
 // :::: CONTROL DE LA HISTORIA ::::
 // 0 = Control Xbox, 1 = Oso, 2 = Tocadiscos, 3 = Cabaña (Final)
-int etapaHistoria = 3;
+int etapaHistoria = 0;
 
 // :::: ETAPA 0: CONTROL XBOX ::::
 glm::vec3 posicionControl = glm::vec3(0.0f, 0.0f, 0.0f); // Se llenará al azar

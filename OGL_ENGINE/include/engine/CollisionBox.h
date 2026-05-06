@@ -122,14 +122,17 @@ public:
             model = glm::rotate(model, glm::radians(angles.x), glm::vec3(1, 0, 0));
             model = glm::rotate(model, glm::radians(angles.y), glm::vec3(0, 1, 0));
             model = glm::rotate(model, glm::radians(angles.z), glm::vec3(0, 0, 1));
-            model = glm::scale(model, scale);
+
+            // :::: EL ARREGLO VISUAL ::::
+            // Multiplicamos por 2 para que las líneas coincidan con la física real
+            model = glm::scale(model, scale * 2.0f);
 
             shader->setMat4("model", model);
             shader->setMat4("view", view);
             shader->setMat4("projection", projection);
             glBindVertexArray(VAO);
             glDrawArrays(GL_LINE_STRIP, 0, 36);
-        }        
+        }
     }
 
     void draw(glm::mat4 model, glm::mat4 view, glm::mat4 projection)

@@ -25,6 +25,7 @@ void dibujarOsoStopMotion(Shader* shader);
 void dibujarTocadiscos(Shader* shader);
 void dibujarCabanaFinal(Shader* shader);
 // :::: COLISIONES ::::
+void activarColisionesCabana();
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection);
 void initScene(Shader ourShader);
 void collisions();
@@ -67,6 +68,7 @@ void processInput(GLFWwindow* window)
             {
                 abrirPuerta = !abrirPuerta;
                 teclaEPulsada = true;
+                collboxes.erase(105);
             }
             else if (distanciaCajuela < 5.0f)
             {
@@ -80,6 +82,16 @@ void processInput(GLFWwindow* window)
                     tocadiscosEncendido = true; // Empieza a girar
                     etapaHistoria = 3; // ¡Inicia el final! (Aparición de cabaña y lluvia)
                     teclaEPulsada = true;
+
+					activarColisionesCabana(); // Activamos las colisiones de la cabaña para el final
+
+                    // :::: NUEVO: BORRAR COLISIONES DE LOS ÁRBOLES DEFORESTADOS ::::
+                    for (int i = 0; i < posicionesBosque.size(); i++) {
+                        float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
+                        if (distACabana < 16.0f) { // El mismo radio de "tala" que en main.cpp
+                            collboxes.erase(200 + i);
+                        }
+                    }
 
                     std::cout << "Tocadiscos activado. ¡Empieza la lluvia de sangre!" << std::endl;
                     // Aquí conectaremos el audio de la canción distorsionada
@@ -201,3 +213,33 @@ void collidedObject_callback(string nameCollidedObject)
 }
 
 void collidedObject_callback(string nameCollidedObject, string nameCollidedObject2) {}
+
+void activarColisionesCabana() {
+    // RECUERDA: El vector de escala es la MITAD del tamaño real.
+    // Si pones vec3(5.0, ...), la pared medirá 10 metros de largo.
+
+    // 1. Pared del Fondo (Roja) - Larga en X, delgada en Z
+    CollisionBox paredFondo(posicionEstructura + glm::vec3(-20.6f, 0.0f, -5.6f), glm::vec3(0.2f, 3.0f, 7.2f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), false, false);
+
+    // 2. Pared Izquierda (Verde) - Delgada en X, Larga en Z
+    CollisionBox paredIzq(posicionEstructura + glm::vec3(-10.3f, 0.0f, 1.5f), glm::vec3(10.5f, 3.0f, 0.2f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), false, false);
+
+    // 3. Pared Derecha (Azul) - Delgada en X, Larga en Z
+    CollisionBox paredDer(posicionEstructura + glm::vec3(-10.2f, 0.0f, -12.55f), glm::vec3(10.5f, 3.0f, 0.2f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), false, false);
+
+    // 4. Pared Frontal Izquierda (Amarilla) - Para dejar el hueco de la puerta
+    CollisionBox paredFrente1(posicionEstructura + glm::vec3(0.1f, 0.0f, 0.8f), glm::vec3(0.2f, 3.0f, 0.78f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), false, false);
+
+    // 5. Pared Frontal Derecha (Morada) - Para dejar el hueco de la puerta
+    CollisionBox paredFrente2(posicionEstructura + glm::vec3(0.1f, 0.0f, -7.35f), glm::vec3(0.2f, 3.0f, 5.4f), glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), false, false);
+
+	// 6. Pared de la Puerta (Naranja) - Para la puerta que se abre
+    CollisionBox paredPuerta(posicionEstructura + glm::vec3(0.1f, 0.0f, -1.0f), glm::vec3(0.2f, 3.0f, 1.0f), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f), false, false);
+
+    collboxes.insert({ 100, {"ParedFondo", paredFondo} });
+    collboxes.insert({ 101, {"ParedIzq", paredIzq} });
+    collboxes.insert({ 102, {"ParedDer", paredDer} });
+    collboxes.insert({ 103, {"ParedFrente1", paredFrente1} });
+    collboxes.insert({ 104, {"ParedFrente2", paredFrente2} });
+    collboxes.insert({ 105, {"Puerta", paredPuerta} });
+}
