@@ -24,6 +24,7 @@ void dibujarControlXbox(Shader* shader);
 void dibujarOsoStopMotion(Shader* shader);
 void dibujarTocadiscos(Shader* shader);
 void dibujarCabanaFinal(Shader* shader);
+// :::: COLISIONES ::::
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection);
 void initScene(Shader ourShader);
 void collisions();

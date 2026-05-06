@@ -60,6 +60,10 @@ Terrain terrain2;
 const char** texturePaths;
 glm::vec3 skyPos(0);
 
+// :::: SISTEMA DE PARTÍCULAS (LLUVIA DE SANGRE) ::::
+Particles* lluviaSangre;
+ParticleProps propsLluvia;
+
 // NUESTRA LISTA PARA EL BOSQUE TÉTRICO
 std::vector<glm::vec3> posicionesBosque = {
     glm::vec3(15.0f, 13.0f, 32.0f),
@@ -82,7 +86,7 @@ std::vector<glm::vec3> posicionesBosque = {
 
 // :::: CONTROL DE LA HISTORIA ::::
 // 0 = Control Xbox, 1 = Oso, 2 = Tocadiscos, 3 = Cabaña (Final)
-int etapaHistoria = 0;
+int etapaHistoria = 3;
 
 // :::: ETAPA 0: CONTROL XBOX ::::
 glm::vec3 posicionControl = glm::vec3(0.0f, 0.0f, 0.0f); // Se llenará al azar

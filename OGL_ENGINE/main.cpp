@@ -174,6 +174,28 @@ int main()
             }
         }
 
+        // :::: ACTUALIZADOR DE PARTÍCULAS ::::
+        // El sistema se actualiza en cada frame basándose en el tiempo
+        if (lluviaSangre != nullptr) {
+            lluviaSangre->OnUpdate(deltaTime);
+        }
+
+        // :::: EMISOR DE LLUVIA DE SANGRE (Solo Etapa 3) ::::
+        if (etapaHistoria >= 3) {
+            // Emitimos 10 gotas por frame para hacer una tormenta densa
+            for (int i = 0; i < 15; i++) {
+                // Hacemos que nazcan en un radio de 30 metros ALREDEDOR de la cámara
+                // así el jugador siente que llueve en todo el mapa, pero ahorramos memoria
+                float offsetX = (static_cast<float>(rand()) / RAND_MAX) * 60.0f - 30.0f;
+                float offsetZ = (static_cast<float>(rand()) / RAND_MAX) * 60.0f - 30.0f;
+
+                // Nacen a 15 metros de altura sobre la cabeza del jugador
+                propsLluvia.Position = camera.Position + glm::vec3(offsetX, 10.0f, offsetZ);
+
+                lluviaSangre->Emit(propsLluvia);
+            }
+        }
+
         collisions();
 
         // :::: DIBUJAR HUD EN PANTALLA (BARRA RETRO) ::::
@@ -263,6 +285,22 @@ void initScene(Shader ourShader)
         listaBaterias.push_back(BateriaRecargable("Bateria_" + std::to_string(i), posAleatoria, 25.0f));
     }
 
+    // :::: INICIALIZAR SISTEMA DE LLUVIA DE SANGRE ::::
+    // Asegúrate de tener esta textura en tu carpeta
+    lluviaSangre = new Particles("textures/gota_sangre.png");
+
+    // Configuración física de la gota de sangre
+    propsLluvia.ColorBegin = glm::vec4(0.8f, 0.0f, 0.0f, 1.0f); // Rojo oscuro al nacer
+    propsLluvia.ColorEnd = glm::vec4(0.4f, 0.0f, 0.0f, 0.0f);   // Rojo más oscuro y transparente al morir
+    propsLluvia.SizeBegin = 0.15f; // Tamaño inicial
+    propsLluvia.SizeEnd = 0.15f;   // Tamaño final
+    propsLluvia.SizeVariation = 0.05f;
+
+    // Configuración de la caída
+    propsLluvia.Velocity = glm::vec3(0.0f, -50.0f, 0.0f); // Caen directo hacia abajo rápido
+    propsLluvia.VelocityVariation = glm::vec3(2.0f, 3.0f, 2.0f); // Ligera variación por el viento
+    propsLluvia.LifeTime = 10.0f; // Duran 1.5 segundos antes de desaparecer al tocar el suelo
+
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
     ourShader.use();
@@ -323,6 +361,13 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         // Etapa Final: Lluvia de Sangre y Cabaña
         dibujarTocadiscos(shader);  // Sigue girando
         dibujarCabanaFinal(shader); // Cabaña, Auto, Muebles y Secretos
+
+        // :::: DIBUJAR LA LLUVIA DE SANGRE ::::
+        // (Le pasamos vec3(0.0) porque la posición ya se calcula en el Emisor)
+        if (lluviaSangre != nullptr) {
+            lluviaSangre->Draw(glm::vec3(0.0f), view, projection);
+        }
+
         break;
     }
 }

@@ -194,7 +194,7 @@ public:
 
             particle.LifeRemaining -= velocity;
             particle.Position += particle.Velocity * velocity;
-            particle.Rotation += 0.01f * velocity;
+            //particle.Rotation += 0.01f * velocity;
         }
     }
 
@@ -205,7 +205,7 @@ public:
         Particle& particle = m_ParticlePool[m_PoolIndex];
         particle.Active = true;
         particle.Position = particleProps.Position;
-        particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
+        particle.Rotation = 0; //Random::Float() * 2.0f * glm::pi<float>();
 
         // Velocity
         particle.Velocity = particleProps.Velocity;
