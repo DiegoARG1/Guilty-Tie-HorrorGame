@@ -1,0 +1,24 @@
+# Blender 5.1.1 MTL File: 'None'
+# www.blender.org
+
+newmtl 03_-_Default
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd 03_-_Default_baseColor.png
+map_Bump -bm 03_-_Default_normal.png
+
+newmtl Material_46
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Material_46_baseColor.png
+map_Bump -bm Material_46_normal.png

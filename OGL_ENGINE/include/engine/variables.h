@@ -21,6 +21,7 @@
 #include <cstdlib> 
 #include <ctime> 
 #include "ObjetosJuego.h"
+#include "EntidadIA.h"
 
 //:::: ENUMS Y CONFIGURACIÓN DEL MOTOR :::://
 enum LightType { FlatColor, AllLights, DirectionalLight, SpotLight, PointLight };
@@ -97,6 +98,10 @@ float timerOso = 0.0f;     // Cronómetro para cambiar de modelo
 int frameOso = 0;          // Del 0 al 3 (tus 4 poses)
 glm::vec3 posicionFijaOso = glm::vec3(18.77f, 15.4f, -23.5f); // Ponle la coordenada que te guste
 
+// :::: IA DEL CAZADOR (BOSQUE) ::::
+// Lo hacemos aparecer en una zona profunda del bosque al iniciar
+EntidadIA cazadorBosque(glm::vec3(35.0f, 18.0f, -35.0f));
+
 //:::: INTERACCIÓN Y OBJETOS :::://
 // 
 bool teclaEPulsada = false;
@@ -124,10 +129,56 @@ glm::vec3 posicionBateria = glm::vec3(20.5f, 17.658f, 37.2f);
 std::vector<BateriaRecargable> listaBaterias;
 glm::vec3 posicionCartel = glm::vec3(19.5f, 17.700f, 37.2f);
 
-//Audio
-Audio efecto1;
-Audio efecto2;
-bool sonar_ambiente = false;
+// :::: SECUENCIA FINAL (EL SUSTO Y LA CARTA) ::::
+
+// 1. Coordenadas Maestras (Ajusta estas leyendo tu consola en el juego)
+glm::vec3 posicionTriggerSusto = glm::vec3(-9.16f, 18.0f, 4.23f); // Donde pisas para que se apague la luz
+glm::vec3 posicionEntidadSusto = glm::vec3(-21.19f, 15.0f, 4.19f); // Donde aparece el monstruo
+glm::vec3 posicionCarta = glm::vec3(-19.0f, 17.0f, 10.0f); // Sobre la mesa
+
+// 2. Máquina de estados del Susto
+bool sustoActivado = false;
+bool sustoTerminado = false;
+bool mostrarEntidad = false;
+float timerSusto = 0.0f;
+
+// 3. Estado del final
+bool cartaRecogida = false;
+
+// 4. Variables de Muerte
+bool jugadorMuerto = false;
+float timerMuerte = 0.0f;
+int frameMuerte = 0;
+
+// :::: MOTOR DE AUDIO (18 Pistas) ::::
+
+// 1. Efectos de un solo toque (SFX - One Shots)
+Audio sfxPuertaCarro;     // (1)
+Audio sfxLinterna;        // (8)
+Audio sfxRecogerBateria;  // (9)
+Audio sfxPuertaCabana;    // (15)
+
+// 2. Voces y Diálogos
+Audio vozCajuela;         // (2) "Tal vez en la cajuela..."
+Audio vozHermanito;       // (5) "Juguemos hermanito..."
+
+// 3. Loops de Movimiento (Se encienden al presionar W,A,S,D)
+Audio pasosJugadorBosque; // (3)
+Audio pasosJugadorCabana; // (16)
+Audio pasosEntidad;       // (6)
+
+// 4. Jumpscares (Máximo volumen)
+Audio jsOso;              // (10)
+Audio jsEntidad;          // (7)
+Audio jsCabana;           // (13)
+
+// 5. Atmósfera y Loops Constantes
+Audio loopAmbiental;      // (4) Viento y bosque oscuro
+Audio loopLluvia;         // (12)
+Audio loopTocadiscos;     // (11) Música distorsionada
+Audio murmullos;          // (14) Gritos recurrentes (random)
+Audio sonidoEntidad;      // (17) Presencia
+Audio musicaFinal;        // (18) Canción melancólica final
 
 //Vectores y renderizado
 vector<glm::vec3> pointLightPositions;

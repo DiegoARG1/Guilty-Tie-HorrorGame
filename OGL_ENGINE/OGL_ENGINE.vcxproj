@@ -155,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Agua.h" />
+    <ClInclude Include="EntidadIA.h" />
     <ClInclude Include="include\engine\Audio.h" />
     <ClInclude Include="include\engine\Billboard.h" />
     <ClInclude Include="include\engine\camera.h" />

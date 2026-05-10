@@ -24,6 +24,10 @@ void dibujarControlXbox(Shader* shader);
 void dibujarOsoStopMotion(Shader* shader);
 void dibujarTocadiscos(Shader* shader);
 void dibujarCabanaFinal(Shader* shader);
+void dibujarEntidadSusto(Shader* shader);
+void dibujarCarta(Shader* shader);
+void dibujarCazadorBosque(Shader* shader);
+void dibujarJumpscareMuerte(Shader* shader);
 // :::: COLISIONES ::::
 void activarColisionesCabana();
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection);
@@ -74,6 +78,19 @@ void processInput(GLFWwindow* window)
             {
                 abrirCajuela = !abrirCajuela;
                 teclaEPulsada = true;
+            }
+            // :::: RECOGER LA CARTA Y TERMINAR EL JUEGO ::::
+            if (etapaHistoria == 3 && sustoTerminado) {
+                // Nota: Exigimos que el susto haya pasado para que pueda agarrarla
+                float distCarta = glm::distance(camera.Position, posicionCarta);
+                if (distCarta < 5.0f) {
+                    cartaRecogida = true;
+                    etapaHistoria = 4; // Pasamos a la Etapa 4 (Pantalla Negra)
+                    teclaEPulsada = true;
+
+                    std::cout << "CARTA RECOGIDA: Iniciando cinemática final." << std::endl;
+                    // Futuro: musicaFinal.Play();
+                }
             }
             // :::: INTERACCIÓN CON EL TOCADISCOS (ETAPA 2) ::::
             if (etapaHistoria == 2) {
@@ -169,6 +186,8 @@ void processInput(GLFWwindow* window)
         saltar = true;
 }
 
+
+
 // :::: EDITOR EN TIEMPO DE EJECUCION::::
 void actionKeys(GLFWwindow* window) {}
 
@@ -242,4 +261,16 @@ void activarColisionesCabana() {
     collboxes.insert({ 103, {"ParedFrente1", paredFrente1} });
     collboxes.insert({ 104, {"ParedFrente2", paredFrente2} });
     collboxes.insert({ 105, {"Puerta", paredPuerta} });
+}
+void cargarAudios() {
+    // Aquí le pasas la ruta de tu archivo .wav o .mp3 a cada variable
+    // Ejemplo (depende de tu librería de audio):
+    //sfxPuertaCarro.Load("audio/puerta_carro.wav");
+    //vozCajuela.Load("audio/voz_cajuela.wav");
+    //loopAmbiental.Load("audio/ambiente_bosque.wav");
+    // ... cargas los 18 aquí
+
+    // Configuras los que deben estar en bucle infinito desde el inicio
+    //loopAmbiental.Loop(true);
+    //loopAmbiental.Play();
 }
