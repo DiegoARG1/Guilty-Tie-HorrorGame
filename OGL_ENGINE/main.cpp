@@ -29,7 +29,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Guilty Tie", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Guilty Tie", glfwGetPrimaryMonitor(), NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -61,7 +61,7 @@ int main()
 
     // :::: NUEVO: INICIALIZAR EL HUD DE TEXTO ::::
     // Se le pasan las medidas de tu pantalla que tienes en tu variables.h
-    TextRenderer Text(SCR_WIDTH, SCR_HEIGHT);
+    TextRenderer Text(VIEW_WIDTH, VIEW_HEIGHT);
     Text.Load("fonts/fuente.ttf", 24); // Asegúrate de que el nombre coincida con tu archivo
 
     // :::: NUEVO: PEGAR OBJETOS ALEATORIOS AL SUELO ::::
@@ -99,17 +99,20 @@ int main()
         float currentFrame = glfwGetTime();
         deltaTime = (currentFrame - lastFrame);
         lastFrame = currentFrame;
-        if (!jugadorMuerto) {
-            processInput(window);
-        }
+        processInput(window);
         //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
-        // FONDO NEGRO
+        // 1. FONDO NEGRO TOTAL (Cubre toda la ventana moderna 1920x1080)
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // 2. :::: APLICAR EL PILLARBOX 4:3 (Crea las barras negras) ::::
+        // Forzamos a que todo el 3D y el HUD se dibuje solo en el cuadro central
+        glViewport(VIEW_OFFSET_X, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
         ourShader.use();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)VIEW_WIDTH / (float)VIEW_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -252,6 +255,7 @@ int main()
             if (glm::distance(camera.Position, cazadorBosque.getPosicion()) < 5.0f) {
                 jugadorMuerto = true;
                 etapaHistoria = 99; // Mandamos al juego a la "Dimensión de Game Over"
+				linternaEncendida = false;
             }
         }
 
@@ -266,64 +270,99 @@ int main()
                     frameMuerte++;
                 }
             }
-            else {
-                // ¡Llegó al frame más aterrador (el último)!
-                // Congelamos la pantalla durante 2 segundos para que lo veas bien
-                if (timerMuerte > 2.0f) {
-                    glfwSetWindowShouldClose(window, true);
-                }
-            }
         }
 
         collisions();
+
+        // =================================================================
+        // :::::::::::::: SISTEMA MODULAR DE HUD Y TEXTOS ::::::::::::::::::
+        // =================================================================
+        // Al estar en 4:3 Pillarbox, nuestro lienzo de texto mide exactamente 
+        // VIEW_WIDTH (1440) x VIEW_HEIGHT (1080). Todas las coordenadas usan este lienzo.
+
+        float centroX = VIEW_WIDTH / 2.0f;  // 720.0f
+        float centroY = VIEW_HEIGHT / 2.0f; // 540.0f
+
+        // 1. CONTROLES DE LA BARRA DE BATERÍA (Arriba a la izquierda)
+        float batX = 40.0f;
+        float batY = 40.0f;
+        float batEscala = 1.0f;
+
+        // 2. CONTROLES DE ALERTA "¡CUIDADO!" (Arriba al centro)
+        // Restamos 110.0f para centrar perfectamente la masa visual de la palabra
+        float alertaX = centroX - 190.0f;   
+        float alertaY = VIEW_HEIGHT - 80.0f;
+        float alertaEscala = 1.5f;
+
+        // 3. CONTROLES DE OBJETIVOS (Abajo al centro)
+        float objX = centroX - 190.0f;
+        float objY = VIEW_HEIGHT - 80.0f; // Separado del borde inferior de forma segura
+        float objEscala = 1.3f;
+
+        // 4. CONTROLES DE GAME OVER (Centro de la pantalla)
+        float goTituloX = centroX - 450;
+        float goTituloY = centroY;
+        float goTituloEscala = 3.0f;
+
+        float goSubX = centroX - 300.0f;
+        float goSubY = centroY + 200.0f;
+        float goSubEscala = 1.2f;
+
+        // 5. CONTROLES DE CINEMÁTICA FINAL (Carta en pantalla negra)
+        float cartaX = centroX - 150.0f;
+        float cartaYInicial = centroY - 100.0f;
+        float cartaEspaciadoY = 60.0f;
+        float cartaEscala = 1.2f;
+
+        // =================================================================
+        // :::::::::::::::::::: RENDERIZADO DEL HUD ::::::::::::::::::::::::
+        // =================================================================
+
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
 
-        // :::: DIBUJAR HUD EN PANTALLA (BARRA RETRO) ::::
-        int numRayitas = (int)((bateriaLinterna / 100.0f) * 20.0f);
-        std::string barraVisual = "[";
-        for (int i = 0; i < 20; i++) {
-            if (i < numRayitas) barraVisual += "|";
-            else barraVisual += " ";
-        }
-        barraVisual += "]";
-
-        std::string textoBateria = "Bateria " + barraVisual + " " + std::to_string((int)bateriaLinterna) + "%";
-
-        // :::: ALERTA VISUAL TEMPORAL ::::
-        if ((etapaHistoria == 1 || etapaHistoria == 2) && cazadorBosque.mostrarAlerta()) {
-            Text.RenderText("¡ C U I D A D O !", (SCR_WIDTH / 2.0f) - 100.0f, 50.0f, 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
-        }
-
-        // :::: DIRECTOR DE TEXTOS Y HUD ::::
-        if (etapaHistoria < 4) {
-        Text.RenderText(textoBateria, 25.0f, 25.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-        if (etapaHistoria == 0) {
-            float centroX = (SCR_WIDTH / 2.0f) - 120.0f;
-            float abajoY = SCR_HEIGHT - 50.0f;
-
-            if (!abrirCajuela) {
-                Text.RenderText("Revisa la cajuela", centroX, abajoY, 1.0f, glm::vec3(0.8f, 0.8f, 0.8f));
-            }
-            else {
-                // ¡La abrió! Texto rojo y tétrico
-                Text.RenderText("E N C U E N T R A L A", centroX - 20.0f, abajoY, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-            }
-        }
-        }
-        else if (etapaHistoria == 4) {
-            // :::: CINEMÁTICA FINAL (PANTALLA NEGRA) ::::
-            // 1. Limpiamos la pantalla en negro total
+        // :::: A) CINEMÁTICA FINAL (ETAPA 4) ::::
+        if (etapaHistoria == 4) {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // 2. Aquí imprimimos tu carta final línea por línea
-            Text.RenderText("Querida familia...", 100.0f, 200.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-            Text.RenderText("Lo siento mucho.", 100.0f, 250.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+            Text.RenderText("Querida familia...", cartaX, cartaYInicial, cartaEscala, glm::vec3(1.0f, 1.0f, 1.0f));
+            Text.RenderText("Lo siento mucho.", cartaX, cartaYInicial + cartaEspaciadoY, cartaEscala, glm::vec3(1.0f, 1.0f, 1.0f));
+        }
+        // :::: B) PANTALLA DE GAME OVER ::::
+        else if (jugadorMuerto && frameMuerte >= 5) {
+            Text.RenderText("P E R D I S T E", goTituloX, goTituloY, goTituloEscala, glm::vec3(1.0f, 0.0f, 0.0f));
+            Text.RenderText("Presiona R para reintentar", goSubX, goSubY, goSubEscala, glm::vec3(1.0f, 1.0f, 1.0f));
+        }
+        // :::: C) HUD NORMAL DE JUEGO (ETAPAS 0 AL 3) ::::
+        else {
+            // 1. Cálculo y dibujado de la Batería
+            int numRayitas = (int)((bateriaLinterna / 100.0f) * 20.0f);
+            std::string barraVisual = "[";
+            for (int i = 0; i < 20; i++) {
+                if (i < numRayitas) barraVisual += "|";
+                else barraVisual += " ";
+            }
+            barraVisual += "]";
 
-            // Nota: Al no llamar a 'drawModels()' aquí, todo el mundo 3D desaparece
-            // y solo queda el texto sobre el fondo negro.
+            std::string textoBateria = "Bateria " + barraVisual + " " + std::to_string((int)bateriaLinterna) + "%";
+            Text.RenderText(textoBateria, batX, batY, batEscala, glm::vec3(1.0f, 1.0f, 1.0f));
+
+            // 2. Alerta de Peligro
+            if ((etapaHistoria == 1 || etapaHistoria == 2) && cazadorBosque.mostrarAlerta()) {
+                Text.RenderText("¡ C U I D A D O !", alertaX, alertaY, alertaEscala, glm::vec3(1.0f, 0.0f, 0.0f));
+            }
+
+            // 3. Objetivos en Pantalla (Etapa 0)
+            if (etapaHistoria == 0) {
+                if (!abrirCajuela) {
+                    Text.RenderText("Revisa la cajuela", objX, objY, objEscala, glm::vec3(0.8f, 0.8f, 0.8f));
+                }
+                else {
+                    Text.RenderText("E N C U E N T R A L A", objX - 20.0f, objY, objEscala, glm::vec3(1.0f, 0.0f, 0.0f));
+                }
+            }
         }
         glEnable(GL_DEPTH_TEST);
 

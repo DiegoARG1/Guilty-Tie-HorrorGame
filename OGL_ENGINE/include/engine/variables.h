@@ -33,8 +33,16 @@ LightType lightType = FlatColor;
 TypeActionKeyBoard typemenu = GAME;
 TransformObject transformObject = COLLBOX;
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+// :::: NUEVO: RESOLUCIÓN NATIVA DEL MONITOR (16:9) ::::
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
+
+// :::: NUEVO: RESOLUCIÓN INTERNA DEL JUEGO (4:3 PILLARBOX) ::::
+const unsigned int VIEW_WIDTH = 1440;
+const unsigned int VIEW_HEIGHT = 1080;
+
+// Desfase para centrar el cuadro 4:3 en la ventana moderna
+const int VIEW_OFFSET_X = 240;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;

@@ -44,6 +44,38 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    // 2. :::: CONTROLES CUANDO ESTÁS MUERTO (GAME OVER) ::::
+    if (jugadorMuerto) {
+        // Solo escuchamos la tecla R para reiniciar
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            jugadorMuerto = false;
+            etapaHistoria = 0;
+            bateriaLinterna = 100.0f;
+            linternaEncendida = true;
+            timerMuerte = 0.0f;
+            frameMuerte = 0;
+
+            camera.Position = posicionAuto + glm::vec3(-6.5f, 1.8f, 5.0f);
+            camera.PosPersonaje = camera.Position;
+            camera.updateCameraVectors();
+
+            cazadorBosque = EntidadIA(glm::vec3(35.0f, 18.0f, -35.0f));
+
+            abrirCajuela = false;
+            anguloCajuela = 0.0f;
+            activandoOso = false;
+            frameOso = 0;
+            tocadiscosEncendido = false;
+            sustoActivado = false;
+            sustoTerminado = false;
+            mostrarEntidad = false;
+
+            std::cout << "JUEGO REINICIADO." << std::endl;
+        }
+        // IMPORTANTE: El 'return' corta la función aquí para que no procese WASD ni la linterna
+        return;
+    }
+
     // Movimiento WASD
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         camera.MovementSpeed = 15.0f; // Velocidad de carrera
@@ -180,10 +212,6 @@ void processInput(GLFWwindow* window)
     {
         teclaFPulsada = false;
     }
-
-    // Salto
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        saltar = true;
 }
 
 
@@ -194,12 +222,13 @@ void actionKeys(GLFWwindow* window) {}
 // :::: RESOLUCIÓN DE PANTALLA ::::
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    glViewport(0, 0, width, height);
+    glViewport(VIEW_OFFSET_X, 0, VIEW_WIDTH, VIEW_HEIGHT);
 }
 
 // :::: CÁMARA CON EL MOUSE ::::
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+	if (jugadorMuerto) return;
     if (firstMouse)
     {
         lastX = xpos;
