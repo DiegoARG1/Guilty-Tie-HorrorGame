@@ -72,7 +72,7 @@ vec4 CalcAllLights();
 
 void main()
 {    
-   vec4 result = CalcAllLights(); 
+    vec4 result = CalcAllLights();
    //SI HAY OBJETOS TRANSPARENTES SE DESCARTA EL FRAGMENTO
     if(result.a < 0.1)
         discard;
@@ -197,7 +197,6 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
         ambient = vec4(light.ambient,1.0) * matColor;
         diffuse = vec4(light.diffuse,1.0) * diff * matColor;
         specular = vec4(light.specular,1.0) * spec * matColor;
-        // CORRECCIÓN: Ya no hay brillo fantasma artificial aquí
         result = (ambient + diffuse + specular) * (attenuation * intensity);
    }
    else
@@ -205,7 +204,6 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
         ambient = vec4(light.ambient,1.0) * texture(material.diffuse, TexCoords);
         diffuse = vec4(light.diffuse,1.0) * diff * texture(material.diffuse, TexCoords);
         specular = vec4(light.specular,1.0) * spec * texture(material.specular, TexCoords);
-        // CORRECCIÓN: Ya no hay brillo fantasma artificial aquí
         result = (ambient + diffuse + specular) * (attenuation * intensity);
    }
   

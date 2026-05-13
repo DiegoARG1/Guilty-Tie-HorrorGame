@@ -1,3 +1,4 @@
+#pragma once
 #include <engine/utils.h>
 #include <engine/variables.h>
 
@@ -70,17 +71,15 @@ void processInput(GLFWwindow* window)
             sustoTerminado = false;
             mostrarEntidad = false;
 
-            std::cout << "JUEGO REINICIADO." << std::endl;
         }
-        // IMPORTANTE: El 'return' corta la función aquí para que no procese WASD ni la linterna
         return;
     }
 
     // Movimiento WASD
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.MovementSpeed = 15.0f; // Velocidad de carrera
-    else
-        camera.MovementSpeed = 3.0f;  // Velocidad normal de caminata
+   // if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+     //   camera.MovementSpeed = 15.0f; // Velocidad de carrera
+    //else
+     //   camera.MovementSpeed = 3.0f;  // Velocidad normal de caminata
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
@@ -113,14 +112,12 @@ void processInput(GLFWwindow* window)
             }
             // :::: RECOGER LA CARTA Y TERMINAR EL JUEGO ::::
             if (etapaHistoria == 3 && sustoTerminado) {
-                // Nota: Exigimos que el susto haya pasado para que pueda agarrarla
                 float distCarta = glm::distance(camera.Position, posicionCarta);
                 if (distCarta < 5.0f) {
                     cartaRecogida = true;
-                    etapaHistoria = 4; // Pasamos a la Etapa 4 (Pantalla Negra)
+                    etapaHistoria = 4;
                     teclaEPulsada = true;
 
-                    std::cout << "CARTA RECOGIDA: Iniciando cinemática final." << std::endl;
                     // Futuro: musicaFinal.Play();
                 }
             }

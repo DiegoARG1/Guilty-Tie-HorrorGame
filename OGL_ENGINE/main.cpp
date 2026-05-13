@@ -59,40 +59,34 @@ int main()
     SkyBox sky(1.0f, "6");
     SkyBox skySangre(1.0f, "sangre");
 
-    // :::: NUEVO: INICIALIZAR EL HUD DE TEXTO ::::
-    // Se le pasan las medidas de tu pantalla que tienes en tu variables.h
+    // :::: INICIALIZAR EL HUD DE TEXTO ::::
     TextRenderer Text(VIEW_WIDTH, VIEW_HEIGHT);
-    Text.Load("fonts/fuente.ttf", 24); // Asegúrate de que el nombre coincida con tu archivo
+    Text.Load("fonts/fuente.ttf", 24);
 
-    // :::: NUEVO: PEGAR OBJETOS ALEATORIOS AL SUELO ::::
+    // :::: PEGAR OBJETOS ALEATORIOS AL SUELO ::::
     for (int i = 0; i < listaBaterias.size(); i++) {
         glm::vec3 posActual = listaBaterias[i].getPosicion();
-
-        // Calculamos la matemática y le RESTAMOS los 2.5m del desfase visual del mapa
         float alturaReal = (terrain.Superficie(posActual.x, posActual.z) * 300.0f) - 2.5f;
 
-        // Ahora sí, lo acomodamos para que descanse sobre el lodo
         posActual.y = alturaReal + 0.2f;
 
         listaBaterias[i].setPosicion(posActual);
     }
 
-    // :::: ETAPA 0: GENERAR EL CONTROL (SISTEMA DE SPAWN POINTS) ::::
-    // 1. Creamos una lista de coordenadas 100% seguras y probadas
+    // :::: GENERAR EL CONTROL (SISTEMA DE SPAWN POINTS) ::::
     std::vector<glm::vec3> posiblesSpawns = {
-        glm::vec3(12.0f, 18.0f, 32.0f),   // Cerca del auto
-        //glm::vec3(-20.0f, 18.0f, 5.0f),   // Cerca de la mesa y la banca
-        //glm::vec3(25.0f, 18.0f, -25.0f),  // En una zona vacía del bosque
-        //glm::vec3(0.0f, 18.0f, 10.0f)     // A mitad del camino inicial
+        glm::vec3(12.0f, 18.0f, 32.0f),   
+        //glm::vec3(-20.0f, 18.0f, 5.0f),   
+        //glm::vec3(25.0f, 18.0f, -25.0f),  
+        //glm::vec3(0.0f, 18.0f, 10.0f)     
     };
 
-    // 2. Elegimos un número de índice al azar (del 0 al 3)
     int indiceSpawn = rand() % posiblesSpawns.size();
     posicionControl = posiblesSpawns[indiceSpawn];
 
-    // 3. Lo pegamos al suelo en esa zona segura
+
     float alturaControl = (terrain.Superficie(posicionControl.x, posicionControl.z) * 300.0f) - 2.5f;
-    posicionControl.y = alturaControl + 0.3f; // Un poquito más arriba para que destaque en el pasto
+    posicionControl.y = alturaControl + 0.3f;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -102,13 +96,11 @@ int main()
         processInput(window);
         //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
-        // 1. FONDO NEGRO TOTAL (Cubre toda la ventana moderna 1920x1080)
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // 2. :::: APLICAR EL PILLARBOX 4:3 (Crea las barras negras) ::::
-        // Forzamos a que todo el 3D y el HUD se dibuje solo en el cuadro central
+        // 2. :::: APLICAR EL PILLARBOX 4:3 ::::
         glViewport(VIEW_OFFSET_X, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
         ourShader.use();
@@ -126,14 +118,6 @@ int main()
             loadEnviroment(&terrain, &skySangre, view, projection);
         }
 
-        // Fisicas basicas (Gravedad y salto)
-        if (saltar) {
-            if (posicion_y < (maxima_altura + posicion_suelo)) posicion_y += 0.1f;
-            else saltar = false;
-        }
-        else {
-            if (posicion_y > posicion_suelo) posicion_y -= 0.1f;
-        }
         // ::::LIMITES DEL MAPA::::
         if (camera.PosPersonaje.x > 49.0f) camera.PosPersonaje.x = 49.0f;
         if (camera.PosPersonaje.x < -49.0f) camera.PosPersonaje.x = -49.0f;
@@ -148,46 +132,38 @@ int main()
         float altura_objetivo = (altura_matematica * 300.0f);
 
         // Ajuste lento
-        // En lugar de igualar la altura de golpe, nos acercamos un porcentaje en cada frame
         float velocidad_suavizado = 5.0f * deltaTime;
         camera.PosPersonaje.y = camera.PosPersonaje.y + (altura_objetivo - camera.PosPersonaje.y) * velocidad_suavizado;
 
-        //Colocamos los ojos 1.8m
         camera.Position.y = camera.PosPersonaje.y + 1.8f;
 
-        // :::: COREOGRAFÍA DEL SUSTO EN LA CABAÑA ::::
+        // :::: SUSTO EN LA CABAÑA ::::
         if (etapaHistoria == 3 && !sustoTerminado) {
 
             if (!sustoActivado) {
-                // ESPERANDO A QUE PISES LA TRAMPA (El Trigger)
                 float distTrigger = glm::distance(camera.Position, posicionTriggerSusto);
 
                 if (distTrigger < 1.5f) {
                     sustoActivado = true;
                     mostrarEntidad = true;
-                    linternaEncendida = false; // ¡SE APAGA DE GOLPE AL PISAR!
+                    linternaEncendida = false;
                 }
             }
             else {
-                // EL SUSTO ESTÁ OCURRIENDO
                 timerSusto += deltaTime;
 
-                // FASE 1: Oscuridad inicial (0.0 a 0.5 segundos)
                 if (timerSusto < 0.5f) {
                     linternaEncendida = false;
                     mostrarEntidad = true;
                 }
-                // FASE 2: ¡El Flashazo! Se enciende la luz y lo ves (0.5 a 0.8 segundos)
                 else if (timerSusto >= 0.5f && timerSusto < 0.8f) {
                     linternaEncendida = true;
                     mostrarEntidad = true;
                 }
-                // FASE 3: Oscuridad de nuevo, el monstruo se esfuma (0.8 a 1.5 segundos)
                 else if (timerSusto >= 0.8f && timerSusto < 1.5f) {
                     linternaEncendida = false;
-                    mostrarEntidad = false; // ¡Ya no está!
+                    mostrarEntidad = false;
                 }
-                // FASE 4: Vuelve la calma y la luz (> 1.5 segundos)
                 else if (timerSusto >= 1.5f) {
                     linternaEncendida = true;
                     mostrarEntidad = false;
@@ -196,65 +172,58 @@ int main()
             }
         }
 
-        // :::: MECÁNICA DE SUPERVIVENCIA: DRENAJE DE BATERÍA ::::
+        // :::: DRENAJE DE BATERIA ::::
         if (linternaEncendida) {
-            // Se gasta 2% por cada segundo real (gracias al deltaTime)
-            bateriaLinterna -= 0.3f * deltaTime;
+            // Se gasta 2% por cada segundo real
+            bateriaLinterna -= 0.4f * deltaTime;
 
-            // Si se acaba, la apagamos a la fuerza
             if (bateriaLinterna <= 0.0f) {
                 bateriaLinterna = 0.0f;
                 linternaEncendida = false;
             }
         }
 
-        // :::: REPRODUCTOR DE ANIMACIÓN STOP-MOTION (OSO) ::::
+        // :::: REPRODUCTOR DE ANIMACION STOP-MOTION (OSO) ::::
         if (activandoOso) {
-            timerOso += deltaTime; // El cronómetro avanza
+            timerOso += deltaTime;
 
-            // Cambia de pose cada 0.15 segundos (Ajusta esto si quieres que voltee más lento o más rápido)
             if (timerOso > 0.15f) {
                 timerOso = 0.0f;
-                frameOso++; // Pasamos a la siguiente pose
+                frameOso++;
 
-                if (frameOso > 3) { // Si ya mostramos la última pose (Oso_Frame3)
+                if (frameOso > 3) {
                     activandoOso = false;
-                    etapaHistoria = 2; // ¡Desaparece el oso y pasamos al Tocadiscos!
-                    std::cout << "Susto del Oso terminado. Ve por el tocadiscos." << std::endl;
+                    etapaHistoria = 2; 
                 }
             }
         }
 
-        // :::: ACTUALIZADOR DE PARTÍCULAS ::::
+        // :::: ACTUALIZADOR DE PARTICULAS ::::
         // El sistema se actualiza en cada frame basándose en el tiempo
         if (lluviaSangre != nullptr) {
             lluviaSangre->OnUpdate(deltaTime);
         }
 
-        // :::: EMISOR DE LLUVIA DE SANGRE (Solo Etapa 3) ::::
+        // :::: EMISOR DE LLUVIA DE SANGRE  ::::
         if (etapaHistoria >= 3) {
-            // Emitimos 10 gotas por frame para hacer una tormenta densa
             for (int i = 0; i < 15; i++) {
-                // Hacemos que nazcan en un radio de 30 metros ALREDEDOR de la cámara
-                // así el jugador siente que llueve en todo el mapa, pero ahorramos memoria
+
                 float offsetX = (static_cast<float>(rand()) / RAND_MAX) * 60.0f - 30.0f;
                 float offsetZ = (static_cast<float>(rand()) / RAND_MAX) * 60.0f - 30.0f;
 
-                // Nacen a 15 metros de altura sobre la cabeza del jugador
                 propsLluvia.Position = camera.Position + glm::vec3(offsetX, 10.0f, offsetZ);
 
                 lluviaSangre->Emit(propsLluvia);
             }
         }
 
-        // :::: CEREBRO DE LA IA EN EL BOSQUE ::::
+        // :::: CEREBRO DE LA IA ::::
         if (etapaHistoria == 1 || etapaHistoria == 2) {
             cazadorBosque.actualizar(deltaTime, camera.Position, camera.Front, linternaEncendida, &terrain);
 
-            // Aumentamos a 3.5f para que no te atraviese la cámara
             if (glm::distance(camera.Position, cazadorBosque.getPosicion()) < 5.0f) {
                 jugadorMuerto = true;
-                etapaHistoria = 99; // Mandamos al juego a la "Dimensión de Game Over"
+                etapaHistoria = 99;
 				linternaEncendida = false;
             }
         }
@@ -263,9 +232,8 @@ int main()
         if (jugadorMuerto) {
             timerMuerte += deltaTime;
 
-            // Mientras no llegue al último frame (frame 5)
             if (frameMuerte < 5) {
-                if (timerMuerte > 0.2f) { // Velocidad de la ráfaga de imágenes
+                if (timerMuerte > 0.2f) { // Velocidad de la rafaga de imagenes
                     timerMuerte = 0.0f;
                     frameMuerte++;
                 }
@@ -280,26 +248,25 @@ int main()
         // Al estar en 4:3 Pillarbox, nuestro lienzo de texto mide exactamente 
         // VIEW_WIDTH (1440) x VIEW_HEIGHT (1080). Todas las coordenadas usan este lienzo.
 
-        float centroX = VIEW_WIDTH / 2.0f;  // 720.0f
-        float centroY = VIEW_HEIGHT / 2.0f; // 540.0f
+        float centroX = VIEW_WIDTH / 2.0f;  
+        float centroY = VIEW_HEIGHT / 2.0f; 
 
-        // 1. CONTROLES DE LA BARRA DE BATERÍA (Arriba a la izquierda)
+        // 1. CONTROLES DE LA BARRA DE BATERÍA
         float batX = 40.0f;
         float batY = 40.0f;
         float batEscala = 1.0f;
 
-        // 2. CONTROLES DE ALERTA "¡CUIDADO!" (Arriba al centro)
-        // Restamos 110.0f para centrar perfectamente la masa visual de la palabra
+        // 2. CONTROLES DE ALERTA "¡CUIDADO!" 
         float alertaX = centroX - 190.0f;   
         float alertaY = VIEW_HEIGHT - 80.0f;
         float alertaEscala = 1.5f;
 
         // 3. CONTROLES DE OBJETIVOS (Abajo al centro)
         float objX = centroX - 190.0f;
-        float objY = VIEW_HEIGHT - 80.0f; // Separado del borde inferior de forma segura
+        float objY = VIEW_HEIGHT - 80.0f;
         float objEscala = 1.3f;
 
-        // 4. CONTROLES DE GAME OVER (Centro de la pantalla)
+        // 4. CONTROLES DE GAME OVER
         float goTituloX = centroX - 450;
         float goTituloY = centroY;
         float goTituloEscala = 3.0f;
@@ -308,7 +275,7 @@ int main()
         float goSubY = centroY + 200.0f;
         float goSubEscala = 1.2f;
 
-        // 5. CONTROLES DE CINEMÁTICA FINAL (Carta en pantalla negra)
+        // 5. CONTROLES DE CINEMÁTICA FINAL 
         float cartaX = centroX - 150.0f;
         float cartaYInicial = centroY - 100.0f;
         float cartaEspaciadoY = 60.0f;
@@ -371,6 +338,7 @@ int main()
     }
 
     delete[] texturePaths;
+	delete lluviaSangre;
 	sky.Release();
     skySangre.Release();
     terrain.Release();
@@ -424,21 +392,17 @@ void initScene(Shader ourShader)
     models.push_back(Model("Oso_F2", "models/Oso/Oso_Pose3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//18
     models.push_back(Model("Oso_F3", "models/Oso/Oso_Pose4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//19
     models.push_back(Model("Control", "models/Control/Control.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f));//20
-    // :::: 21. ENTIDAD (ESTÁTICA PARA EL SUSTO DE LA CABAÑA) ::::
     models.push_back(Model("Entidad_Est", "models/Entidad/Entidad_Estatica.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 21
-    // :::: 22-25. ENTIDAD (ANIMACIÓN CAMINADO / LEVITANDO) ::::
     models.push_back(Model("Entidad_C1", "models/Entidad/Caminado/Entidad_F1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 22
     models.push_back(Model("Entidad_C2", "models/Entidad/Caminado/Entidad_F2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 23
     models.push_back(Model("Entidad_C3", "models/Entidad/Caminado/Entidad_F3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 24
     models.push_back(Model("Entidad_C4", "models/Entidad/Caminado/Entidad_F4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 25
-    // :::: 26-31. ENTIDAD (ANIMACIÓN JUMPSCARE) ::::
     models.push_back(Model("Entidad_JS1", "models/Entidad/JumpScare/Entidad_JS_1.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 26
     models.push_back(Model("Entidad_JS2", "models/Entidad/JumpScare/Entidad_JS_2.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 27
     models.push_back(Model("Entidad_JS3", "models/Entidad/JumpScare/Entidad_JS_3.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 28
     models.push_back(Model("Entidad_JS4", "models/Entidad/JumpScare/Entidad_JS_4.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 29
     models.push_back(Model("Entidad_JS5", "models/Entidad/JumpScare/Entidad_JS_5.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 30
     models.push_back(Model("Entidad_JS6", "models/Entidad/JumpScare/Entidad_JS_6.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 31
-    // :::: 32. CARTA FINAL ::::
     models.push_back(Model("Carta", "models/Carta/Carta.obj", glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, 1.0f)); // 32
 
 
@@ -471,23 +435,18 @@ void initScene(Shader ourShader)
     propsLluvia.VelocityVariation = glm::vec3(2.0f, 3.0f, 2.0f); // Ligera variación por el viento
     propsLluvia.LifeTime = 10.0f; // Duran 1.5 segundos antes de desaparecer al tocar el suelo
 
-    // :::: COLISIONES DEL ENTORNO (CARRO Y ÁRBOLES) ::::
+    // :::: COLISIONES DEL ENTORNO ::::
 
-    // 1. EL CARRO (ID: 10)
-    // El carro está rotado 280 grados (casi viendo hacia el eje X). 
-    // Haremos una caja más larga en X y más angosta en Z.
+    // 1. EL CARRO
     CollisionBox cajaCarro(posicionAuto + glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(2.5f, 3.0f, 7.0f), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f), false, false);
     collboxes.insert({ 10, {"Carro", cajaCarro} });
 
-    // 2. LOS ÁRBOLES (IDs del 200 en adelante)
+    // 2. LOS ARBOLES
     for (int i = 0; i < posicionesBosque.size(); i++) {
-        // 1. Calculamos la misma escala visual que usa tu dibujado
         float escalaPino = 2.0f + ((i % 5) * 0.4f);
 
-        // 2. Definimos un radio base para el tronco (ej. 25 centímetros) y lo multiplicamos por la escala
         float radioTronco = 0.42f * escalaPino;
 
-        // 3. Le pasamos esa variable dinámica a las medidas X y Z de la caja
         CollisionBox cajaArbol(posicionesBosque[i], glm::vec3(radioTronco, 8.0f, radioTronco), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), false, false);
         collboxes.insert({ 200 + i, {"Arbol_" + std::to_string(i), cajaArbol} });
     }
@@ -534,7 +493,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
     dibujarBateriasAleatorias(shader);
 	dibujarCarro(shader);
 
-    // 2. MÁQUINA DE ESTADOS DE LA HISTORIA
     switch (etapaHistoria) {
     case 0:
         // Etapa inicial: Buscar el control
@@ -558,7 +516,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
 		dibujarCarta(shader); // La carta que aparece al fondo del mapa
 
         // :::: DIBUJAR LA LLUVIA DE SANGRE ::::
-        // (Le pasamos vec3(0.0) porque la posición ya se calcula en el Emisor)
         if (lluviaSangre != nullptr) {
             lluviaSangre->Draw(glm::vec3(0.0f), view, projection);
         }
@@ -569,8 +526,6 @@ void drawModels(Shader* shader, glm::mat4 view, glm::mat4 projection)
         dibujarJumpscareMuerte(shader);
         break;
     }
-    // :::: NUEVO: DIBUJADOR DE CAJAS DE COLISIÓN (DEBUG MODO) ::::
-    // Esto dibujará las líneas de colores si la caja tiene el 'withBox = true'
     for (auto& item : collboxes) {
         item.second.second.draw(view, projection);
     }
@@ -582,17 +537,14 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 
     // :::: LUZ AMBIENTAL DINÁMICA (LUNA O SANGRE) ::::
     if (etapaHistoria < 3) {
-        // Luz de Luna normal (Azulada y tranquila)
         shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-        shader->setVec3("dirLights[0].ambient", 0.03f, 0.03f, 0.05f);
-        shader->setVec3("dirLights[0].diffuse", 0.02f, 0.02f, 0.03f);
+        shader->setVec3("dirLights[0].ambient", 0.02f, 0.025f, 0.04f); // ANTES 0.04, 0.045, 0.07
+        shader->setVec3("dirLights[0].diffuse", 0.01f, 0.015f, 0.02f); // ANTES 0.025, 0.03, 0.04
     }
     else {
-        // Luz de Sangre (Roja, oscura y tensa)
         shader->setVec3("dirLights[0].direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-        // Aumentamos un poco el ambient en rojo para que todo se tiña, pero bajamos el azul a cero
-        shader->setVec3("dirLights[0].ambient", 0.06f, 0.0f, 0.0f);
-        shader->setVec3("dirLights[0].diffuse", 0.04f, 0.0f, 0.0f);
+        shader->setVec3("dirLights[0].ambient", 0.045f, 0.008f, 0.008f);
+        shader->setVec3("dirLights[0].diffuse", 0.05f, 0.01f, 0.01f);
     }
     shader->setVec3("dirLights[0].specular", 0.0f, 0.0f, 0.0f);
 
@@ -636,11 +588,11 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
         shader->setVec3("spotLights[0].position", camera.Position + (camera.Right * 0.45f) + (camera.Up * -0.35f));
         shader->setVec3("spotLights[0].direction", camera.Front);
         shader->setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
-        shader->setVec3("spotLights[0].diffuse", 3.0f, 3.0f, 2.5f);
+        shader->setVec3("spotLights[0].diffuse", 2.0f, 2.0f, 1.8f);
         shader->setVec3("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
         shader->setFloat("spotLights[0].constant", 1.0f);
-        shader->setFloat("spotLights[0].linear", 0.02f);
-        shader->setFloat("spotLights[0].quadratic", 0.001f);
+        shader->setFloat("spotLights[0].linear", 0.24f);
+        shader->setFloat("spotLights[0].quadratic", 0.05f);
         shader->setFloat("spotLights[0].cutOff", glm::cos(glm::radians(10.0f)));
         shader->setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(15.0f)));
     }
@@ -664,14 +616,10 @@ void setMultipleLight(Shader* shader, vector<glm::vec3> pointLightPositions)
 
 void collisions()
 {
-    // 2. :::: NUESTRO SISTEMA PROFESIONAL DE COLISIÓN (AABB) ::::
-    // Esto sobrescribe el bug del motor y crea colisiones físicas reales y sólidas.
-
-    float radioCam = 0.2f; // El grosor físico de tu jugador
+    float radioCam = 0.2f;
     glm::vec3 camMin = camera.Position - glm::vec3(radioCam);
     glm::vec3 camMax = camera.Position + glm::vec3(radioCam);
 
-    // CAMBIO AQUÍ: Usamos un iterador clásico para evitar errores de versión de C++
     for (auto const& item : collboxes) {
 
         // item.second es el 'pair' que guarda el string y la caja.
@@ -710,7 +658,7 @@ void collisions()
     }
 }
 // =================================================================
-// ::::::::::::: MODULOS DE RENDERIZADO (CLEAN CODE) :::::::::::::::
+// ::::::::::::: MODULOS DE RENDERIZADO :::::::::::::::
 // =================================================================
 
 void dibujarLinterna(Shader* shader) {
@@ -861,18 +809,16 @@ void dibujarCarro(Shader* shader) {
     modelCajuela = glm::scale(modelCajuela, glm::vec3(3.1f));
     if (models.size() > 7) models[7].Draw(*shader, modelCajuela);
 
-    // :::: OBJETOS EN CAJUELA (Solo se dibujan si está abierta) ::::
+    // :::: OBJETOS EN CAJUELA  ::::
     if (anguloCajuela > 20.0f) {
 		// CARTEL
         glm::mat4 modelCartel = glm::mat4(1.0f);
-        modelCartel = glm::translate(modelCartel, posicionAuto); // Sigue al carro
+        modelCartel = glm::translate(modelCartel, posicionAuto);
         modelCartel = glm::rotate(modelCartel, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // OFFSET LOCAL: Basado en tus coordenadas originales (19.5, 17.7, 37.2)
-        // He ajustado los valores para compensar el giro de 10 grados
+
         modelCartel = glm::translate(modelCartel, glm::vec3(-0.8f, 0.0f, 0.5f));
 
-        // Rotación relativa: el cartel estaba a 280 grados y el carro ahora a 270
         modelCartel = glm::rotate(modelCartel, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelCartel = glm::rotate(modelCartel, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         modelCartel = glm::scale(modelCartel, glm::vec3(0.5f));
@@ -883,7 +829,6 @@ void dibujarCarro(Shader* shader) {
         modelBateria = glm::translate(modelBateria, posicionAuto);
         modelBateria = glm::rotate(modelBateria, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // OFFSET LOCAL: Basado en (20.5, 17.658, 37.2)
         modelBateria = glm::translate(modelBateria, glm::vec3(-0.8f, -0.14f, -0.5f));
 
         modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -896,7 +841,7 @@ void dibujarEntidadSusto(Shader* shader) {
         glm::mat4 modelEnt = glm::mat4(1.0f);
         modelEnt = glm::translate(modelEnt, posicionEntidadSusto);
         modelEnt = glm::rotate(modelEnt, glm::radians(95.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelEnt = glm::scale(modelEnt, glm::vec3(3.5f)); // Ajusta su tamaño
+        modelEnt = glm::scale(modelEnt, glm::vec3(3.5f));
         if (models.size() > 20) models[20].Draw(*shader, modelEnt);
     }
 }
@@ -906,7 +851,7 @@ void dibujarCarta(Shader* shader) {
         glm::mat4 modelCarta = glm::mat4(1.0f);
         modelCarta = glm::translate(modelCarta, posicionCarta);
 		modelCarta = glm::rotate(modelCarta, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        modelCarta = glm::scale(modelCarta, glm::vec3(0.2f)); // Ajusta su tamaño
+        modelCarta = glm::scale(modelCarta, glm::vec3(0.2f));
         if (models.size() > 31) models[31].Draw(*shader, modelCarta);
     }
 }
@@ -918,21 +863,17 @@ void dibujarJumpscareMuerte(Shader* shader) {
         // :::: ZONA DE AJUSTE MANUAL DEL DIRECTOR (JUMPSCARE) :::::::
         // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-        // 1. PROFUNDIDAD (Z): ¿Qué tan lejos de la cámara? 
-        // (Aumenta este número a 3.0f o 4.0f si sigues viendo solo la túnica negra)
+        // 1. PROFUNDIDAD (Z):
         float alejarDeCamara = 4.7f;
 
-        // 2. ALTURA (Y): ¿Qué tan arriba o abajo?
-        // (Aumenta a 3.5f o 4.0f para bajar más su cuerpo y que la cara quede a tu nivel)
+        // 2. ALTURA (Y):
         float bajarCuerpo = 4.0f;
 
-        // 3. HORIZONTAL (X): Por si el modelo sale cargado a un lado
-        // (Positivo lo mueve a la derecha, negativo a la izquierda. 0.0f es el centro)
+        // 3. HORIZONTAL (X):
         float moverLado = 0.5f;
 
         // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-        // Aplicamos tus ajustes matemáticamente a la posición de la cámara
         glm::vec3 posFrente = camera.Position;
         posFrente += camera.Front * alejarDeCamara;
         posFrente += camera.Right * moverLado;
@@ -940,7 +881,6 @@ void dibujarJumpscareMuerte(Shader* shader) {
 
         modelJS = glm::translate(modelJS, posFrente);
 
-        // Giramos al monstruo para que te dé la cara
         modelJS = glm::rotate(modelJS, glm::radians(-camera.Yaw - 90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelJS = glm::rotate(modelJS, glm::radians(camera.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -959,21 +899,13 @@ void dibujarCazadorBosque(Shader* shader) {
         glm::mat4 modelCazador = glm::mat4(1.0f);
         modelCazador = glm::translate(modelCazador, cazadorBosque.getPosicion());
 
-        // :::: NUEVO: ROTACIÓN MATEMÁTICA HACIA EL JUGADOR ::::
-        // 1. Calculamos la diferencia de distancia en X y Z
+        // :::: ROTACIÓN HACIA EL JUGADOR ::::
         float deltaX = camera.Position.x - cazadorBosque.getPosicion().x;
         float deltaZ = camera.Position.z - cazadorBosque.getPosicion().z;
 
-        // 2. atan2 calcula el ángulo exacto en radianes hacia donde estás tú
         float anguloHaciaJugador = atan2(deltaX, deltaZ);
 
-        // 3. Aplicamos el giro en el eje Y (como si girara el cuello)
         modelCazador = glm::rotate(modelCazador, anguloHaciaJugador, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // IMPORTANTE: Los modelos de Blender a veces se exportan viendo hacia un lado distinto.
-        // Si notas que al hacer esto el monstruo te persigue caminando "de lado" o "de espaldas",
-        // solo quítale las diagonales a esta línea de abajo y ajusta los grados (ej. 90.0f, 180.0f, -90.0f):
-        // modelCazador = glm::rotate(modelCazador, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         modelCazador = glm::scale(modelCazador, glm::vec3(3.5f));
 
