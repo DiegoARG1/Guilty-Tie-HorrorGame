@@ -73,7 +73,7 @@ int main()
         listaBaterias[i].setPosicion(posActual);
     }
 
-    // :::: GENERAR EL CONTROL (SISTEMA DE SPAWN POINTS) ::::
+    // :::: GENERAR EL CONTROL ::::
     std::vector<glm::vec3> posiblesSpawns = {
         glm::vec3(12.0f, 18.0f, 32.0f),   
         //glm::vec3(-20.0f, 18.0f, 5.0f),   
@@ -84,9 +84,27 @@ int main()
     int indiceSpawn = rand() % posiblesSpawns.size();
     posicionControl = posiblesSpawns[indiceSpawn];
 
-
     float alturaControl = (terrain.Superficie(posicionControl.x, posicionControl.z) * 300.0f) - 2.5f;
     posicionControl.y = alturaControl + 0.3f;
+
+    // :::: GENERAR EL OSO ::::
+    std::vector<glm::vec3> posiblesSpawnsOso = {
+        glm::vec3(18.77f, 15.4f, -23.5f),  
+        //glm::vec3(-15.0f, 18.0f, -30.0f),  
+        //glm::vec3(35.0f, 18.0f, 15.0f),     
+        //glm::vec3(-25.0f, 18.0f, 25.0f)     
+    };
+
+    int indiceOso = rand() % posiblesSpawnsOso.size();
+    posicionFijaOso = posiblesSpawnsOso[indiceOso];
+
+    float alturaOso = (terrain.Superficie(posicionFijaOso.x, posicionFijaOso.z) * 300.0f) - 2.5f;
+    posicionFijaOso.y = alturaOso + 0.1f;
+
+    //CorreccionCamara
+    float alturaInicial = terrain.Superficie(camera.Position.x, camera.Position.z) * 300.0f;
+    camera.PosPersonaje.y = alturaInicial;
+    camera.Position.y = camera.PosPersonaje.y + 1.8f;
 
     while (!glfwWindowShouldClose(window))
     {
