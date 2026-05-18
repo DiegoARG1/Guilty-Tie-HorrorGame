@@ -96,6 +96,41 @@ int main()
         processInput(window);
         //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
+        // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        // :::: TIMELINE DE LA CINEMÁTICA DEL TOCADISCOS :::::::::::::
+        // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        if (etapaHistoria >= 3 && tocadiscosEncendido) {
+            timerTocadiscos += deltaTime;
+
+            if (jugadorCongelado && timerTocadiscos > 20.0f) {
+                jugadorCongelado = false;
+            }
+
+            float duracionIntro = 296.9f;
+
+            if (timerTocadiscos > duracionIntro && !loopTocadiscosActivo) {
+                loopTocadiscos.Play();
+                loopTocadiscosActivo = true;
+            }
+        }
+
+       // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+        // :::: SECUENCIA CINEMÁTICA DE INICIO :::::::::::::::::::::::
+        // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+        if (!vozInicioSonada && etapaHistoria == 0) {
+            framesCarga++;
+
+            if (framesCarga > 10) {
+                timerInicio += deltaTime;
+
+                if (timerInicio > 1.5f) {
+                    vozHombre1.Play();
+                    vozInicioSonada = true;
+                }
+            }
+        }
+
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -147,6 +182,7 @@ int main()
                     sustoActivado = true;
                     mostrarEntidad = true;
                     linternaEncendida = false;
+                    jsCabana.Play();
                 }
             }
             else {
@@ -221,19 +257,54 @@ int main()
         if (etapaHistoria == 1 || etapaHistoria == 2) {
             cazadorBosque.actualizar(deltaTime, camera.Position, camera.Front, linternaEncendida, &terrain);
 
-            if (glm::distance(camera.Position, cazadorBosque.getPosicion()) < 5.0f) {
+            float distIA = glm::distance(camera.Position, cazadorBosque.getPosicion());
+
+            float distMinima = 12.0f;
+            float distMaxima = 45.0f;
+
+            int volMax = 1000;
+            int volMin = 500;
+
+            int volIA = volMax;
+
+            if (distIA > distMinima) {
+                float porcentaje = (distIA - distMinima) / (distMaxima - distMinima);
+                if (porcentaje > 1.0f) porcentaje = 1.0f;
+                volIA = volMax - (int)(porcentaje * (volMax - volMin));
+            }
+
+                // :::: SOLO SUENA CUANDO APARECE LA ALERTA DE PELIGRO ::::
+                if (cazadorBosque.mostrarAlerta()) {
+                    sonidoEntidad.SetVolume(volIA);
+                    pasosEntidad.SetVolume(volIA);
+                }
+                else {
+                    sonidoEntidad.SetVolume(0);
+                    pasosEntidad.SetVolume(0);
+                }
+
+            // CONDICION DE MUERTE
+            if (distIA < 5.0f) {
                 jugadorMuerto = true;
                 etapaHistoria = 99;
-				linternaEncendida = false;
+                linternaEncendida = false;
+                sonidoEntidad.Stop();
+                pasosEntidad.Stop();
+                pasosJugadorBosque.Stop();
+                loopAmbiental.Stop();
+                loopLluvia.Stop();
+                loopTocadiscos.Stop();
+
+                jsEntidad.Play();
             }
         }
 
-        // :::: CRONÓMETRO DEL JUMPSCARE (ANIMACIÓN) ::::
+        // :::: CRONÓMETRO DEL JUMPSCARE  ::::
         if (jugadorMuerto) {
             timerMuerte += deltaTime;
 
             if (frameMuerte < 5) {
-                if (timerMuerte > 0.2f) { // Velocidad de la rafaga de imagenes
+                if (timerMuerte > 0.2f) { 
                     timerMuerte = 0.0f;
                     frameMuerte++;
                 }
@@ -454,6 +525,10 @@ void initScene(Shader ourShader)
     glEnable(GL_DEPTH_TEST);
     camera.setCollBox();
     ourShader.use();
+
+    cargarAudios();       
+    loopAmbiental.Play();
+    sfxPuertaCarro.Play();
 }
 
 void loadEnviroment(Terrain* terrain, SkyBox* sky, glm::mat4 view, glm::mat4 projection)
@@ -825,15 +900,18 @@ void dibujarCarro(Shader* shader) {
         if (models.size() > 10) models[10].Draw(*shader, modelCartel);
 
         // BATERÍA
-        glm::mat4 modelBateria = glm::mat4(1.0f);
-        modelBateria = glm::translate(modelBateria, posicionAuto);
-        modelBateria = glm::rotate(modelBateria, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
+        if (!bateriaCajuelaRecogida)
+        {
+            glm::mat4 modelBateria = glm::mat4(1.0f);
+            modelBateria = glm::translate(modelBateria, posicionAuto);
+            modelBateria = glm::rotate(modelBateria, glm::radians(orientacionAuto), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        modelBateria = glm::translate(modelBateria, glm::vec3(-0.8f, -0.14f, -0.5f));
+            modelBateria = glm::translate(modelBateria, glm::vec3(-0.8f, -0.14f, -0.5f));
 
-        modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
-        if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+            modelBateria = glm::rotate(modelBateria, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            modelBateria = glm::scale(modelBateria, glm::vec3(7.0f));
+            if (models.size() > 11) models[11].Draw(*shader, modelBateria);
+        }
     }
 }
 void dibujarEntidadSusto(Shader* shader) {

@@ -63,7 +63,7 @@ bool saltar = false;
 //:::: LINTERNA Y VISIÓN :::://
 bool linternaEncendida = true;
 bool teclaFPulsada = false;
-float bateriaLinterna = 100.0f;
+float bateriaLinterna = 50.0f;
 
 //:::: ENTORNO, TERRENO Y CLIMA :::://
 Terrain terrain2;
@@ -98,6 +98,11 @@ std::vector<glm::vec3> posicionesBosque = {
 // 0 = Control Xbox, 1 = Oso, 2 = Tocadiscos, 3 = Cabaña (Final)
 int etapaHistoria = 0;
 
+// :::: NUEVO: VARIABLES PARA REINICIAR LA CINEMÁTICA ::::
+int framesCarga = 0;
+float timerInicio = 0.0f;
+bool vozInicioSonada = false;
+
 // :::: ETAPA 0: CONTROL XBOX ::::
 glm::vec3 posicionControl = glm::vec3(0.0f, 0.0f, 0.0f); // Se llenará al azar
 
@@ -106,6 +111,7 @@ bool activandoOso = false; // Se vuelve true cuando presionas 'E'
 float timerOso = 0.0f;     // Cronómetro para cambiar de modelo
 int frameOso = 0;          // Del 0 al 3 (tus 4 poses)
 glm::vec3 posicionFijaOso = glm::vec3(18.77f, 15.4f, -23.5f); // Ponle la coordenada que te guste
+bool vozOsoSonada = false;
 
 // :::: IA DEL CAZADOR (BOSQUE) ::::
 // Lo hacemos aparecer en una zona profunda del bosque al iniciar
@@ -123,12 +129,17 @@ glm::vec3 posicionEstructura = glm::vec3(-2.0f, 17.4f, 15.0f);
 bool abrirCajuela = false;
 float anguloCajuela = 0.0f;
 glm::vec3 posicionAuto = glm::vec3(20.0f, 17.8f, 38.0f);
+bool bateriaCajuelaRecogida = false;
 
 //Tocadiscos
 bool tocadiscosEncendido = false;
 float anguloDisco = 0.0f;
 float velocidadDisco = 0.0f; // Para que acelere poco a poco
 glm::vec3 posicionTocadiscos = glm::vec3(31.0f, 12.0f, -18.0f); // Ajusta según tu terreno
+// :::: NUEVO: VARIABLES DE LA CINEMÁTICA DEL TOCADISCOS ::::
+bool jugadorCongelado = false;
+float timerTocadiscos = 0.0f;
+bool loopTocadiscosActivo = false;
 
 //Objetos
 glm::vec3 posicionMesa = glm::vec3(-19.0f, 15.3f, 10.0f);
@@ -144,6 +155,11 @@ glm::vec3 posicionCartel = glm::vec3(19.5f, 17.700f, 37.2f);
 glm::vec3 posicionTriggerSusto = glm::vec3(-9.16f, 18.0f, 4.23f); // Donde pisas para que se apague la luz
 glm::vec3 posicionEntidadSusto = glm::vec3(-21.19f, 15.0f, 4.19f); // Donde aparece el monstruo
 glm::vec3 posicionCarta = glm::vec3(-19.0f, 17.0f, 10.0f); // Sobre la mesa
+
+// :::: NUEVAS VARIABLES DE AUDIO PARA EL FINAL ::::
+bool vozCabanaSonada = false;
+float timerPuerta = 0.0f;
+bool vozCartaSonada = false;
 
 // 2. Máquina de estados del Susto
 bool sustoActivado = false;
@@ -162,32 +178,41 @@ int frameMuerte = 0;
 // :::: MOTOR DE AUDIO (18 Pistas) ::::
 
 // 1. Efectos de un solo toque (SFX - One Shots)
-Audio sfxPuertaCarro;     // (1)
-Audio sfxLinterna;        // (8)
-Audio sfxRecogerBateria;  // (9)
-Audio sfxPuertaCabana;    // (15)
+Audio sfxPuertaCarro;     
+Audio sfxLinterna;        
+Audio sfxRecogerBateria;  
+Audio sfxPuertaCabana;
+Audio sfxCajuelaCarro;
 
 // 2. Voces y Diálogos
-Audio vozCajuela;         // (2) "Tal vez en la cajuela..."
-Audio vozHermanito;       // (5) "Juguemos hermanito..."
+Audio vozHombre1; // "Tal vez tenga baterias en la cajuela"
+Audio vozHombre2; // "Te voy a encontrar"
+Audio vozHombre3; // "...que su cancion favorita"
+
+Audio vozMujer1;  // "Juguemos hermanito"
+Audio vozMujer2;  // "No sigas"
+Audio vozMujer3;  // "Gracias es lo que queria"
+Audio vozMujer4;  // "Por que lo haces"
+Audio vozMujer5;  // "Que haces aqui"     
 
 // 3. Loops de Movimiento (Se encienden al presionar W,A,S,D)
-Audio pasosJugadorBosque; // (3)
-Audio pasosJugadorCabana; // (16)
-Audio pasosEntidad;       // (6)
+Audio pasosJugadorBosque; 
+Audio pasosJugadorCabana;
+Audio pasosEntidad;       
 
 // 4. Jumpscares (Máximo volumen)
-Audio jsOso;              // (10)
-Audio jsEntidad;          // (7)
-Audio jsCabana;           // (13)
+Audio jsOso;              
+Audio jsEntidad;          
+Audio jsCabana;           
 
 // 5. Atmósfera y Loops Constantes
-Audio loopAmbiental;      // (4) Viento y bosque oscuro
-Audio loopLluvia;         // (12)
-Audio loopTocadiscos;     // (11) Música distorsionada
-Audio murmullos;          // (14) Gritos recurrentes (random)
-Audio sonidoEntidad;      // (17) Presencia
-Audio musicaFinal;        // (18) Canción melancólica final
+Audio loopAmbiental;      
+Audio loopLluvia;
+Audio musicaIntroTocadiscos;
+Audio loopTocadiscos;     
+Audio murmullos;          
+Audio sonidoEntidad;      
+Audio musicaFinal;        
 
 //Vectores y renderizado
 vector<glm::vec3> pointLightPositions;

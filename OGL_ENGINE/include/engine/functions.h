@@ -50,8 +50,13 @@ void processInput(GLFWwindow* window)
         // Solo escuchamos la tecla R para reiniciar
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
             jugadorMuerto = false;
+            jsEntidad.Stop();
+            sonidoEntidad.Stop();
+            pasosEntidad.Stop();
+
+            // reset
             etapaHistoria = 0;
-            bateriaLinterna = 100.0f;
+            bateriaLinterna = 50.0f;
             linternaEncendida = true;
             timerMuerte = 0.0f;
             frameMuerte = 0;
@@ -62,39 +67,133 @@ void processInput(GLFWwindow* window)
 
             cazadorBosque = EntidadIA(glm::vec3(35.0f, 18.0f, -35.0f));
 
+			// reset objetos y triggers
             abrirCajuela = false;
             anguloCajuela = 0.0f;
+            bateriaCajuelaRecogida = false;
+
             activandoOso = false;
             frameOso = 0;
+            vozOsoSonada = false;
+
             tocadiscosEncendido = false;
+            velocidadDisco = 0.0f;
+
             sustoActivado = false;
             sustoTerminado = false;
             mostrarEntidad = false;
+            cartaRecogida = false;
 
+            // reset cinematicas
+            framesCarga = 0;
+            timerInicio = 0.0f;
+            vozInicioSonada = false;
+
+            loopAmbiental.Play();
+            sfxPuertaCarro.Play();
         }
         return;
     }
 
-    // Movimiento WASD
-   // if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-     //   camera.MovementSpeed = 15.0f; // Velocidad de carrera
-    //else
-     //   camera.MovementSpeed = 3.0f;  // Velocidad normal de caminata
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // :::: SISTEMA DINÁMICO DE PASOS (EXTERIOR VS CABAÑA) :::::
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+    bool intentandoMoverse = (
+        glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
+        )&& !jugadorCongelado;
+
+    static bool pasosSonando = false;
+    static int tipoSueloActual = -1; // 0 = Exterior, 1 = Cabaña
+
+    if (intentandoMoverse) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.ProcessKeyboard(FORWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.ProcessKeyboard(BACKWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.ProcessKeyboard(LEFT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.ProcessKeyboard(RIGHT, deltaTime);
+
+        // 1. Deducimos si estamos afuera o adentro
+        int nuevoTipoSuelo = 0; // Por defecto asumimos Exterior
+
+        // NUEVO CÁLCULO: Zona rectangular exacta de la cabaña basada en tus paredes
+        if (etapaHistoria >= 3) {
+            // Calculamos dónde estás tú en relación a la bisagra de la puerta
+            float relX = camera.Position.x - posicionEstructura.x;
+            float relZ = camera.Position.z - posicionEstructura.z;
+
+            // Si estás dentro de los límites de las 4 paredes, pisas madera
+            if (relX > -20.6f && relX < 0.1f && relZ > -12.55f && relZ < 1.5f) {
+                nuevoTipoSuelo = 1;
+            }
+        }
+
+        // 2. Si es la primera vez que pisamos, o entramos/salimos de la cabaña
+        if (!pasosSonando || tipoSueloActual != nuevoTipoSuelo) {
+
+            // Callamos ambos audios para evitar superposiciones
+            pasosJugadorBosque.Stop();
+            pasosJugadorCabana.Stop();
+
+            // Reproducimos el correcto en bucle infinito
+            if (nuevoTipoSuelo == 0) pasosJugadorBosque.Play();
+            else if (nuevoTipoSuelo == 1) pasosJugadorCabana.Play();
+
+            pasosSonando = true;
+            tipoSueloActual = nuevoTipoSuelo;
+        }
+    }
+    else {
+        // 3. Si soltamos las teclas, apagamos los pasos al instante
+        if (pasosSonando) {
+            pasosJugadorBosque.Stop();
+            pasosJugadorCabana.Stop();
+            pasosSonando = false;
+        }
+    }
 
     float distanciaCabana = glm::distance(camera.Position, posicionEstructura);
     float distanciaCajuela = glm::distance(camera.Position, posicionAuto);
     float distToca = glm::distance(camera.Position, posicionTocadiscos);
 
-    // Interaccion:(Tecla E)
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // :::: TRIGGER DE PROXIMIDAD: LA NIÑA DEL OSO (ETAPA 1) :::
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    if (etapaHistoria == 1 && !vozOsoSonada) {
+        float distOso = glm::distance(camera.Position, posicionFijaOso);
+
+        if (distOso < 12.0f) {
+            vozMujer3.Play();
+            vozOsoSonada = true;
+        }
+    }
+
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    // :::: TRIGGERS: LA CABAÑA Y LA CARTA (ETAPA 3) :::::::::::
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    if (etapaHistoria == 3) {
+
+        if (abrirPuerta && !vozCabanaSonada) {
+            timerPuerta += deltaTime;
+
+            if (timerPuerta > 1.2f) {
+                vozMujer2.Play();
+                vozCabanaSonada = true;
+            }
+        }
+
+        if (sustoTerminado && !vozCartaSonada) {
+            float distCarta = glm::distance(camera.Position, posicionCarta);
+
+            if (distCarta < 7.0f) {
+                vozMujer5.Play();
+                vozCartaSonada = true;
+            }
+        }
+    }
+
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
         if (!teclaEPulsada)
@@ -102,13 +201,29 @@ void processInput(GLFWwindow* window)
             if (distanciaCabana < 5.0f)
             {
                 abrirPuerta = !abrirPuerta;
+				sfxPuertaCabana.Play();
                 teclaEPulsada = true;
                 collboxes.erase(105);
             }
             else if (distanciaCajuela < 5.0f)
             {
-                abrirCajuela = !abrirCajuela;
-                teclaEPulsada = true;
+                if (!abrirCajuela) {
+                    abrirCajuela = true;
+                    sfxCajuelaCarro.Play();
+                    vozHombre2.Play();
+                    teclaEPulsada = true;
+                }
+                else if (!bateriaCajuelaRecogida) {
+                    bateriaCajuelaRecogida = true;
+
+                    bateriaLinterna += 35.0f;
+                    if (bateriaLinterna > 100.0f) bateriaLinterna = 100.0f;
+
+                    sfxRecogerBateria.Play();
+                    vozMujer4.Play();
+
+                    teclaEPulsada = true;
+                }
             }
             // :::: RECOGER LA CARTA Y TERMINAR EL JUEGO ::::
             if (etapaHistoria == 3 && sustoTerminado) {
@@ -118,29 +233,46 @@ void processInput(GLFWwindow* window)
                     etapaHistoria = 4;
                     teclaEPulsada = true;
 
-                    // Futuro: musicaFinal.Play();
+                    // :::: APAGÓN TOTAL DE LA ATMÓSFERA ::::
+                    loopLluvia.Stop();
+                    loopTocadiscos.Stop();
+                    pasosJugadorCabana.Stop();
+					musicaIntroTocadiscos.Stop();
+					loopTocadiscos.Stop();
+
+                    // :::: MÚSICA DE CRÉDITOS ::::
+                    musicaFinal.Play();
                 }
             }
             // :::: INTERACCIÓN CON EL TOCADISCOS (ETAPA 2) ::::
             if (etapaHistoria == 2) {
                 float distToca = glm::distance(camera.Position, posicionTocadiscos);
                 if (distToca < 5.0f) {
-                    tocadiscosEncendido = true; // Empieza a girar
-                    etapaHistoria = 3; // ¡Inicia el final! (Aparición de cabaña y lluvia)
+                    tocadiscosEncendido = true;
+                    etapaHistoria = 3;
                     teclaEPulsada = true;
 
-					activarColisionesCabana(); // Activamos las colisiones de la cabaña para el final
+                    activarColisionesCabana();
 
-                    // :::: NUEVO: BORRAR COLISIONES DE LOS ÁRBOLES DEFORESTADOS ::::
+                    // :::: BORRAR COLISIONES DE LOS ÁRBOLES DEFORESTADOS ::::
                     for (int i = 0; i < posicionesBosque.size(); i++) {
                         float distACabana = glm::distance(posicionesBosque[i], posicionEstructura);
-                        if (distACabana < 16.0f) { // El mismo radio de "tala" que en main.cpp
+                        if (distACabana < 16.0f) {
                             collboxes.erase(200 + i);
                         }
                     }
 
-                    std::cout << "Tocadiscos activado. ¡Empieza la lluvia de sangre!" << std::endl;
-                    // Aquí conectaremos el audio de la canción distorsionada
+                    // :::: INICIO DE LA CINEMÁTICA DEL TOCADISCOS ::::
+                    jugadorCongelado = true;
+                    timerTocadiscos = 0.0f;
+
+                    vozHombre3.Play();
+                    musicaIntroTocadiscos.Play();
+                    sonidoEntidad.Stop();
+                    pasosEntidad.Stop();
+                    loopAmbiental.Stop();
+
+                    loopLluvia.Play();
                 }
             }
 
@@ -149,13 +281,13 @@ void processInput(GLFWwindow* window)
                 float distControl = glm::distance(camera.Position, posicionControl);
 
                 if (distControl < 5.0f) {
-                    etapaHistoria = 1; // ¡Avanzamos a la etapa del oso!
+                    etapaHistoria = 1;
                     teclaEPulsada = true;
-
-                    std::cout << "Control recogido. 'Hermano, juegas conmigo?'" << std::endl;
-                    std::cout << "¡La entidad ha despertado! Busca el oso." << std::endl;
-
-                    // Aquí más adelante pondremos: efecto1.Play(); 
+                    vozMujer1.Play();
+                    sonidoEntidad.SetVolume(0);
+                    pasosEntidad.SetVolume(0);
+                    sonidoEntidad.Play();
+                    pasosEntidad.Play();
                 }
             }
 
@@ -163,28 +295,25 @@ void processInput(GLFWwindow* window)
             if (etapaHistoria == 1 && !activandoOso) {
                 float distOso = glm::distance(camera.Position, posicionFijaOso);
                 if (distOso < 5.0f) {
-                    activandoOso = true; // ¡Inicia la animación de Stop-Motion!
+                    activandoOso = true;
                     teclaEPulsada = true;
-                    // Aquí luego pondremos tu Audio de tensión
+                    jsOso.Play();
                 }
             }
 
             // :::: NUEVO: RECOGER BATERÍAS ALEATORIAS ::::
             for (int i = 0; i < listaBaterias.size(); i++) {
-                // Verificamos que la batería siga activa (que no la hayas recogido ya)
                 if (listaBaterias[i].isActivo()) {
                     float distBateria = glm::distance(camera.Position, listaBaterias[i].getPosicion());
 
                     if (distBateria < 5.0f) {
-                        listaBaterias[i].interactuar(); // El polimorfismo hace que desaparezca
+                        listaBaterias[i].interactuar();
 
-                        bateriaLinterna += 35.0f; // Recargamos la variable de la linterna
-                        if (bateriaLinterna > 100.0f) bateriaLinterna = 100.0f; // Límite máximo
-
-                        std::cout << "Bateria recogida! Nivel de linterna: " << bateriaLinterna << "%" << std::endl;
-
+                        bateriaLinterna += 35.0f; 
+                        if (bateriaLinterna > 100.0f) bateriaLinterna = 100.0f; 
+                        sfxRecogerBateria.Play();
                         teclaEPulsada = true;
-                        break; // Solo recogemos una a la vez
+                        break;
                     }
                 }
             }
@@ -203,6 +332,7 @@ void processInput(GLFWwindow* window)
         {
             linternaEncendida = !linternaEncendida;
             teclaFPulsada = true;
+            sfxLinterna.Play();
         }
     }
     else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
@@ -225,7 +355,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // :::: CÁMARA CON EL MOUSE ::::
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (jugadorMuerto) return;
+	if (jugadorMuerto || jugadorCongelado) return;
     if (firstMouse)
     {
         lastX = xpos;
@@ -289,14 +419,67 @@ void activarColisionesCabana() {
     collboxes.insert({ 105, {"Puerta", paredPuerta} });
 }
 void cargarAudios() {
-    // Aquí le pasas la ruta de tu archivo .wav o .mp3 a cada variable
-    // Ejemplo (depende de tu librería de audio):
-    //sfxPuertaCarro.Load("audio/puerta_carro.wav");
-    //vozCajuela.Load("audio/voz_cajuela.wav");
-    //loopAmbiental.Load("audio/ambiente_bosque.wav");
-    // ... cargas los 18 aquí
+    // 1. EFECTOS DE SONIDO (Interacciones)
+    sfxPuertaCarro.Load("audio/puerta_carro.mp3");
+    sfxLinterna.Load("audio/linterna_click.mp3");
+    sfxRecogerBateria.Load("audio/recoger_bateria.mp3");
+	sfxRecogerBateria.SetVolume(600);
+    sfxPuertaCabana.Load("audio/puerta_rechina.mp3");
+	sfxPuertaCabana.SetVolume(600);
+	sfxCajuelaCarro.Load("audio/cajuela.mp3");
+	sfxCajuelaCarro.SetVolume(400);
 
-    // Configuras los que deben estar en bucle infinito desde el inicio
-    //loopAmbiental.Loop(true);
-    //loopAmbiental.Play();
+    // 2. VOCES MASCULINAS
+    vozHombre1.Load("audio/Voz_hombre_1.mp3"); // Al aparecer en el juego (batería baja)
+    vozHombre1.SetVolume(400);
+    vozHombre2.Load("audio/Voz_hombre_2.mp3"); // Cuando abre la cajuela
+    vozHombre2.SetVolume(400);
+    vozHombre3.Load("audio/Voz_hombre_3.mp3"); // Cuando inicia el tocadiscos
+    vozHombre3.SetVolume(400);
+
+    // 3. VOCES FEMENINAS
+    vozMujer1.Load("audio/Voz_mujer_1.mp3"); // Toma el control
+    vozMujer2.Load("audio/Voz_mujer_2.mp3"); // Entra a la cabaña
+    vozMujer3.Load("audio/Voz_mujer_3.mp3"); // Agarra el oso de peluche
+    vozMujer4.Load("audio/Voz_mujer_4.mp3"); // Agarra batería de la cajuela
+    vozMujer5.Load("audio/Voz_mujer_5.mp3"); // Al entrar a la habitación final
+
+    // 4. MURMULLOS Y SONIDOS DE LA ENTIDAD
+    murmullos.Load("audio/murmullos.mp3");
+    sonidoEntidad.Load("audio/sonido_entidad.mp3");
+    sonidoEntidad.Loop(true);
+
+    // 5. LOOPS DE MOVIMIENTO (Pasos)
+    pasosJugadorBosque.Load("audio/pasos_bosque.mp3");
+    pasosJugadorBosque.Loop(true);
+	pasosJugadorBosque.SetVolume(400);
+
+    pasosJugadorCabana.Load("audio/pasos_madera.mp3");
+    pasosJugadorCabana.Loop(true);
+
+    pasosEntidad.Load("audio/pasos_moustro.mp3");
+    pasosEntidad.Loop(true);
+
+    // 6. JUMPSCARES
+    jsOso.Load("audio/susto_oso.mp3");
+    jsEntidad.Load("audio/susto_entidad.mp3");
+    jsCabana.Load("audio/susto_final.mp3");
+
+    // 7. ATMÓSFERA CONSTANTE
+    loopAmbiental.Load("audio/ambiente_bosque.mp3");
+    loopAmbiental.Loop(true);
+    loopAmbiental.SetVolume(300);
+
+    loopLluvia.Load("audio/lluvia.mp3");
+    loopLluvia.Loop(true);
+	loopLluvia.SetVolume(400);
+
+    musicaIntroTocadiscos.Load("audio/musica_distorcionada.mp3");
+	musicaIntroTocadiscos.SetVolume(500);
+
+    loopTocadiscos.Load("audio/musica_distorcionada_loop.mp3");
+    loopTocadiscos.Loop(true);
+	loopTocadiscos.SetVolume(500);
+
+    musicaFinal.Load("audio/musica_final.mp3");
 }
