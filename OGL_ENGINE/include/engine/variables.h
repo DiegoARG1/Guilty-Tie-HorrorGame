@@ -169,6 +169,7 @@ float timerSusto = 0.0f;
 
 // 3. Estado del final
 bool cartaRecogida = false;
+bool cartaLeida = false;
 
 // 4. Variables de Muerte
 bool jugadorMuerto = false;

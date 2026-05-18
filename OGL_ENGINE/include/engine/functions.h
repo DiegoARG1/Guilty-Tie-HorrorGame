@@ -45,6 +45,13 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    // :::: AVANZAR EN LA PANTALLA FINAL ::::
+    if (etapaHistoria == 4 && !cartaLeida) {
+        if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+            cartaLeida = true;
+        }
+    }
+
     // 2. :::: CONTROLES CUANDO ESTÁS MUERTO (GAME OVER) ::::
     if (jugadorMuerto) {
         // Solo escuchamos la tecla R para reiniciar

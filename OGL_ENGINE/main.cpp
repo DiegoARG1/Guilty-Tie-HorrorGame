@@ -112,7 +112,7 @@ int main()
         deltaTime = (currentFrame - lastFrame);
         lastFrame = currentFrame;
         processInput(window);
-        //std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
+        std::cout << "X: " << camera.Position.x << " Y: " << camera.Position.y << " Z: " << camera.Position.z << std::endl;
 
         // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
         // :::: TIMELINE DE LA CINEMÁTICA DEL TOCADISCOS :::::::::::::
@@ -383,8 +383,37 @@ int main()
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            Text.RenderText("Querida familia...", cartaX, cartaYInicial, cartaEscala, glm::vec3(1.0f, 1.0f, 1.0f));
-            Text.RenderText("Lo siento mucho.", cartaX, cartaYInicial + cartaEspaciadoY, cartaEscala, glm::vec3(1.0f, 1.0f, 1.0f));
+            if (!cartaLeida) {
+                // :::: TIPOGRAFÍA EXACTA BASADA EN EL MOCKUP DE ILLUSTRATOR ::::
+                float escalaTexto = 1.0f; // Ajusta este valor general si la fuente se ve muy grande o pequeña
+
+                // 1. Título (Alineado a la izquierda del párrafo, en la parte superior)
+                Text.RenderText("A mi querido hermano...", centroX - 450.0f, 220.0f, escalaTexto * 1.1f, glm::vec3(1.0f, 1.0f, 1.0f));
+
+                // 2. Cuerpo del texto (Pirámide centrada simulando el panel de Illustrator)
+                // Se centra restando un cálculo basado en la longitud de cada string
+                float Y_Base = 350.0f;
+                float interlineado = 45.0f;
+
+                Text.RenderText("El dia que deje este mundo estaba convencida", centroX - 350.0f, Y_Base, escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+                Text.RenderText("de que todos me olvidarian,", centroX - 210.0f, Y_Base + interlineado, escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+
+                Text.RenderText("pero tu te negaste a soltarme. Sigues aqui,", centroX - 340.0f, Y_Base + (interlineado * 2.5f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+                Text.RenderText("obligando a tu mente a revivir los recuerdos", centroX - 350.0f, Y_Base + (interlineado * 3.5f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+                Text.RenderText("que tu mismo conviertes en una pesadilla.", centroX - 325.0f, Y_Base + (interlineado * 4.5f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+
+                Text.RenderText("Abandona el bosque oscuro.", centroX - 200.0f, Y_Base + (interlineado * 6.0f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+                Text.RenderText("Deja atras el castigo que te persigue sin descanso.", centroX - 400.0f, Y_Base + (interlineado * 7.0f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+                Text.RenderText("Libera tu alma de este lazo culpable.", centroX - 290.0f, Y_Base + (interlineado * 8.0f), escalaTexto, glm::vec3(0.9f, 0.9f, 0.9f));
+
+                // 3. Indicador de continuar (Basado en tu Y: 877px)
+                Text.RenderText("Presiona ENTER para continuar", centroX - 230.0f, 877.0f, escalaTexto, glm::vec3(0.5f, 0.5f, 0.5f));
+            }
+            else {
+                // :::: PANTALLA DE CRÉDITOS ::::
+                Text.RenderText("G R A C I A S   P O R   J U G A R", centroX - 450.0f, centroY, 1.5f, glm::vec3(0.8f, 0.0f, 0.0f));
+                Text.RenderText("Presiona ESC para salir", centroX - 210.0f, centroY + 150.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+            }
         }
         // :::: B) PANTALLA DE GAME OVER ::::
         else if (jugadorMuerto && frameMuerte >= 5) {
@@ -800,7 +829,9 @@ void dibujarBateriasAleatorias(Shader* shader) {
         if (listaBaterias[i].isActivo()) {
             glm::mat4 modelBat = glm::mat4(1.0f);
             modelBat = glm::translate(modelBat, listaBaterias[i].getPosicion());
-            modelBat = glm::scale(modelBat, glm::vec3(4.0f));
+            modelBat = glm::rotate(modelBat, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            modelBat = glm::scale(modelBat, glm::vec3(7.0f));
+
             if (models.size() > 11) models[11].Draw(*shader, modelBat);
         }
     }
